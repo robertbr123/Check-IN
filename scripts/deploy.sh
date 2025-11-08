@@ -73,10 +73,17 @@ check_env() {
         exit 1
     fi
     
-    # Carregar variáveis do .env (ignorando comentários)
-    set -a
-    source <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | grep '=')
-    set +a
+    # Carregar variáveis do .env de forma segura
+    while IFS='=' read -r key value; do
+        # Ignorar linhas vazias e comentários
+        if [[ -z "$key" ]] || [[ "$key" =~ ^[[:space:]]*# ]]; then
+            continue
+        fi
+        # Exportar apenas se tiver key=value válido
+        if [[ -n "$key" ]] && [[ -n "$value" ]]; then
+            export "$key=$value"
+        fi
+    done < <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | grep '=')
     
     if [ -z "$NEXTAUTH_SECRET" ] || [ "$NEXTAUTH_SECRET" == "TROCAR_POR_SECRET_GERADO_COM_OPENSSL_32_CARACTERES_MINIMO" ]; then
         error "NEXTAUTH_SECRET não está configurado!"
