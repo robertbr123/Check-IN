@@ -28,7 +28,7 @@ export function Navbar() {
   const canAccessScanner = true // Todos podem acessar o scanner
 
   return (
-    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -86,12 +86,13 @@ export function Navbar() {
           </div>
 
           {/* User Info & Logout */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             <div className="text-right">
-              <p className="text-sm font-medium text-slate-900">
+              <p className="text-sm font-medium">
                 {session?.user?.name}
               </p>
-              <p className="text-xs text-slate-500">{session?.user?.role}</p>
+              <p className="text-xs text-muted-foreground">{session?.user?.role}</p>
             </div>
             <Button
               variant="outline"
@@ -121,7 +122,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slate-200">
+          <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-2">
               {canAccessScanner && (
                 <Link
@@ -181,12 +182,15 @@ export function Navbar() {
                 </Link>
               )}
 
-              <div className="pt-4 border-t border-slate-200 mt-2">
-                <div className="px-4 py-2">
-                  <p className="text-sm font-medium text-slate-900">
-                    {session?.user?.name}
-                  </p>
-                  <p className="text-xs text-slate-500">{session?.user?.role}</p>
+              <div className="pt-4 border-t border-border mt-2">
+                <div className="px-4 py-2 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {session?.user?.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{session?.user?.role}</p>
+                  </div>
+                  <ThemeToggle />
                 </div>
                 <Button
                   variant="outline"

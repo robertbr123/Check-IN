@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import ImportCSV from "@/components/ImportCSV"
 
 interface Participant {
   id: string
@@ -48,6 +49,7 @@ export default function ParticipantsPage() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null)
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
   const [qrCodeImage, setQrCodeImage] = useState<string>("")
+  const [selectedEventForImport, setSelectedEventForImport] = useState<string>("")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -194,6 +196,47 @@ export default function ParticipantsPage() {
           Novo Participante
         </Button>
       </div>
+
+      {/* Import CSV */}
+      <ImportCSV 
+        eventId={selectedEventForImport}
+        onImportComplete={fetchParticipants}
+      />
+
+      {/* Event Selector for Import */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Selecionar Evento para Importação</CardTitle>
+          <CardDescription>Escolha um evento antes de importar participantes via CSV</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Select
+              value={selectedEventForImport || undefined}
+              onValueChange={setSelectedEventForImport}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um evento" />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedEventForImport && (
+              <button
+                onClick={() => setSelectedEventForImport("")}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Limpar seleção
+              </button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Participants List */}
       <Card>

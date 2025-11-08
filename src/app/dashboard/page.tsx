@@ -2,54 +2,52 @@
 
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Calendar, UserCheck, QrCode } from "lucide-react"
-import { useEffect, useState } from "react"
-
-interface DashboardStats {
-  totalEvents: number
-  totalParticipants: number
-  totalCheckIns: number
-  totalUsers: number
-}
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Users, Calendar, UserCheck, QrCode, RefreshCw, Clock } from "lucide-react"
+import { useRealtimeStats } from "@/hooks/useRealtimeStats"
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const [stats, setStats] = useState<DashboardStats>({
-    totalEvents: 0,
-    totalParticipants: 0,
-    totalCheckIns: 0,
-    totalUsers: 0,
-  })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchStats()
-  }, [])
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch("/api/dashboard/stats")
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data)
-      }
-    } catch (error) {
-      console.error("Erro ao carregar estatísticas:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { stats, loading, lastUpdate, refresh } = useRealtimeStats(10000) // Atualiza a cada 10 segundos
 
   const isAdmin = session?.user?.role === "ADMIN"
+  
+  const formatLastUpdate = () => {
+    if (!lastUpdate) return "Nunca"
+    const seconds = Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000)
+    if (seconds < 10) return "Agora mesmo"
+    if (seconds < 60) return `${seconds}s atrás`
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}min atrás`
+    return lastUpdate.toLocaleTimeString("pt-BR")
+  }
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-blue-900">Dashboard</h1>
-        <p className="text-slate-600 mt-2">
-          Bem-vindo, {session?.user?.name}! ({session?.user?.role})
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-blue-900">Dashboard</h1>
+          <p className="text-slate-600 mt-2">
+            Bem-vindo, {session?.user?.name}! ({session?.user?.role})
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="gap-2">
+            <Clock className="w-3 h-3" />
+            Atualizado {formatLastUpdate()}
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            className="gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -61,7 +59,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-900">
-              {loading ? "..." : stats.totalEvents}
+              {loading ? "..." : stats?.totalEvents || 0}
             </div>
             <p className="text-xs text-slate-500 mt-1">Eventos cadastrados</p>
           </CardContent>
@@ -74,7 +72,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-900">
-              {loading ? "..." : stats.totalParticipants}
+              {loading ? "..." : stats?.totalParticipants || 0}
             </div>
             <p className="text-xs text-slate-500 mt-1">Participantes ativos</p>
           </CardContent>
@@ -87,7 +85,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-purple-900">
-              {loading ? "..." : stats.totalCheckIns}
+              {loading ? "..." : stats?.totalCheckIns || 0}
             </div>
             <p className="text-xs text-slate-500 mt-1">Check-ins realizados</p>
           </CardContent>
@@ -101,7 +99,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-orange-900">
-                {loading ? "..." : stats.totalUsers}
+                {loading ? "..." : stats?.totalUsers || 0}
               </div>
               <p className="text-xs text-slate-500 mt-1">Usuários do sistema</p>
             </CardContent>

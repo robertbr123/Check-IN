@@ -13,8 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Download, FileSpreadsheet, Users, UserCheck, Clock } from "lucide-react"
+import { Download, FileSpreadsheet, Users, UserCheck, Clock, FileText } from "lucide-react"
 import * as XLSX from "xlsx"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 interface Event {
   id: string
@@ -141,6 +143,80 @@ export default function ReportsPage() {
     XLSX.writeFile(wb, `relatorio-${eventName.replace(/\s/g, "-")}.xlsx`)
   }
 
+  const exportToPDF = () => {
+    if (reportData.length === 0 || !stats) return
+
+    const eventName = events.find((e) => e.id === selectedEvent)?.name || "Evento"
+    const doc = new jsPDF()
+
+    // Título
+    doc.setFontSize(18)
+    doc.setTextColor(37, 99, 235) // Azul
+    doc.text(`Relatório de Presença`, 14, 20)
+    
+    doc.setFontSize(14)
+    doc.setTextColor(0, 0, 0)
+    doc.text(eventName, 14, 30)
+
+    // Estatísticas
+    doc.setFontSize(10)
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 40)
+    
+    doc.setFontSize(11)
+    doc.text(`Total de Participantes: ${stats.totalParticipants}`, 14, 50)
+    doc.text(`Check-ins Realizados: ${stats.checkedIn}`, 14, 57)
+    doc.text(`Check-outs Realizados: ${stats.checkedOut}`, 14, 64)
+    doc.text(`Taxa de Presença: ${stats.presenceRate.toFixed(1)}%`, 14, 71)
+
+    // Tabela
+    const tableData = reportData.flatMap((item) => {
+      if (item.checkIns.length === 0) {
+        return [[
+          item.participant.name,
+          item.participant.email,
+          item.participant.phone || "-",
+          item.participant.company || "-",
+          "-",
+          "-",
+          "Sem check-in",
+        ]]
+      }
+
+      return item.checkIns.map((checkIn) => [
+        item.participant.name,
+        item.participant.email,
+        item.participant.phone || "-",
+        item.participant.company || "-",
+        new Date(checkIn.checkInTime).toLocaleString("pt-BR"),
+        checkIn.checkOutTime
+          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR")
+          : "-",
+        checkIn.status === "CHECKED_IN" ? "Presente" : "Saiu",
+      ])
+    })
+
+    autoTable(doc, {
+      head: [["Nome", "Email", "Telefone", "Empresa", "Check-in", "Check-out", "Status"]],
+      body: tableData,
+      startY: 80,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [37, 99, 235], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 20 },
+      },
+    })
+
+    // Salva
+    doc.save(`relatorio-${eventName.replace(/\s/g, "-")}.pdf`)
+  }
+
   const formatDateTime = (date: string) => {
     return new Date(date).toLocaleString("pt-BR", {
       day: "2-digit",
@@ -184,11 +260,20 @@ export default function ReportsPage() {
               </SelectContent>
             </Select>
             <Button
+              onClick={exportToPDF}
+              disabled={!selectedEvent || reportData.length === 0}
+              variant="outline"
+              className="gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+            <Button
               onClick={exportToExcel}
               disabled={!selectedEvent || reportData.length === 0}
               className="gap-2"
             >
-              <Download className="w-4 h-4" />
+              <FileSpreadsheet className="w-4 h-4" />
               Exportar Excel
             </Button>
           </div>
