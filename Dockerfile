@@ -4,6 +4,9 @@
 # Otimizado para Next.js 14+ com build rápido e imagem pequena
 # ==============================================================================
 
+# Build argument para invalidar cache quando necessário
+ARG CACHE_BUST=1
+
 # ------------------------------------------------------------------------------
 # Stage 1: Dependências
 # ------------------------------------------------------------------------------
@@ -23,6 +26,7 @@ RUN npm ci && \
 # Stage 2: Builder
 # ------------------------------------------------------------------------------
 FROM node:18-alpine AS builder
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copiar dependências do stage anterior
@@ -34,15 +38,15 @@ RUN npx prisma generate
 
 # Desabilitar telemetria do Next.js
 ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
 
-# Build da aplicação (com verbose para debug)
+# Build da aplicação
 RUN npm run build
 
 # ------------------------------------------------------------------------------
 # Stage 3: Production Dependencies
 # ------------------------------------------------------------------------------
 FROM node:18-alpine AS prod-deps
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copiar package files
@@ -50,7 +54,7 @@ COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
 # Instalar apenas dependências de produção
-RUN npm ci --only=production && \
+RUN npm ci --omit=dev && \
     npm cache clean --force && \
     npx prisma generate
 
