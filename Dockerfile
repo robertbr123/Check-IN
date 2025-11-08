@@ -15,8 +15,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
-# Instalar dependências
-RUN npm ci --only=production && \
+# Instalar TODAS as dependências (incluindo dev para o build)
+RUN npm ci && \
     npm cache clean --force
 
 # ------------------------------------------------------------------------------
@@ -34,12 +34,28 @@ RUN npx prisma generate
 
 # Desabilitar telemetria do Next.js
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV production
 
-# Build da aplicação
+# Build da aplicação (com verbose para debug)
 RUN npm run build
 
 # ------------------------------------------------------------------------------
-# Stage 3: Runner (Imagem Final)
+# Stage 3: Production Dependencies
+# ------------------------------------------------------------------------------
+FROM node:18-alpine AS prod-deps
+WORKDIR /app
+
+# Copiar package files
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+
+# Instalar apenas dependências de produção
+RUN npm ci --only=production && \
+    npm cache clean --force && \
+    npx prisma generate
+
+# ------------------------------------------------------------------------------
+# Stage 4: Runner (Imagem Final)
 # ------------------------------------------------------------------------------
 FROM node:18-alpine AS runner
 WORKDIR /app
@@ -52,12 +68,15 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+# Copiar dependências de produção
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules/.prisma ./node_modules/.prisma
+
 # Copiar arquivos públicos e gerados
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Ajustar permissões
 RUN chown -R nextjs:nodejs /app
