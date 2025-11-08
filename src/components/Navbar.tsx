@@ -3,6 +3,7 @@
 import { signOut, useSession } from "next-auth/react"
 import Link from "next/link"
 import { Button } from "./ui/button"
+import ThemeToggle from "./ThemeToggle"
 import {
   Users,
   Calendar,
