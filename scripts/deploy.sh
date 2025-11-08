@@ -16,7 +16,7 @@ NC='\033[0m'
 
 # Configurações
 COMPOSE_FILE="docker-compose.prod.yml"
-ENV_FILE=".env.production"
+ENV_FILE="./.env.production"
 BACKUP_DIR="./backups"
 
 # Funções de log
