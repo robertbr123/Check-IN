@@ -25,6 +25,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.production
 
 # vercel
 .vercel
@@ -35,3 +36,21 @@ next-env.d.ts
 
 # prisma
 prisma/migrations
+
+# backups
+backups/
+*.sql
+*.sql.gz
+
+# logs
+logs/
+nginx/logs/
+
+# ssl certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# docker volumes
+postgres_data/
