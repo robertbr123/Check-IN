@@ -73,8 +73,8 @@ check_env() {
         exit 1
     fi
     
-    # Verificar se variáveis críticas estão configuradas
-    source "$ENV_FILE"
+    # Carregar variáveis críticas (ignorando comentários e linhas vazias)
+    export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
     
     if [ -z "$NEXTAUTH_SECRET" ] || [ "$NEXTAUTH_SECRET" == "TROCAR_POR_SECRET_GERADO_COM_OPENSSL_32_CARACTERES_MINIMO" ]; then
         error "NEXTAUTH_SECRET não está configurado!"
