@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       },
       include: {
         _count: {
-          select: { participants: true },
+          select: { eventParticipants: true },
         },
       },
     })
