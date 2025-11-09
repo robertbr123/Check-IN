@@ -27,7 +27,13 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.2.0",
     "@types/nodemailer": "^7.0.3",
+    "@types/papaparse": "^5.5.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
@@ -43,6 +49,7 @@
     "nodemailer": "^7.0.10",
     "papaparse": "^5.5.3",
     "postcss": "^8.4.41",
+    "prisma": "^5.18.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -57,14 +64,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22.2.0",
-    "@types/papaparse": "^5.5.0",
-    "@types/qrcode": "^1.5.5",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
-    "prisma": "^5.18.0"
+    "eslint-config-next": "14.2.5"
   }
 }
