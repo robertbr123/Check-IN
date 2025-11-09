@@ -143,32 +143,151 @@ export default function ReportsPage() {
     XLSX.writeFile(wb, `relatorio-${eventName.replace(/\s/g, "-")}.xlsx`)
   }
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (reportData.length === 0 || !stats) return
 
     const eventName = events.find((e) => e.id === selectedEvent)?.name || "Evento"
-    const doc = new jsPDF()
+    
+    // Buscar configurações do sistema
+    let settings: any = null
+    try {
+      const response = await fetch("/api/settings")
+      if (response.ok) {
+        settings = await response.json()
+      }
+    } catch (error) {
+      console.error("Erro ao carregar configurações:", error)
+    }
 
-    // Título
-    doc.setFontSize(18)
+    // Criar PDF em orientação horizontal (landscape)
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    })
+
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    let yPosition = 15
+
+    // ===== CABEÇALHO COM LOGO E INFORMAÇÕES DO SISTEMA =====
+    
+    // Adicionar logo se existir
+    if (settings?.logoUrl) {
+      try {
+        // Tentar carregar e adicionar o logo
+        const img = new Image()
+        img.crossOrigin = "Anonymous"
+        img.src = settings.logoUrl
+        
+        await new Promise((resolve) => {
+          img.onload = () => {
+            doc.addImage(img, "PNG", 15, yPosition, 25, 25)
+            resolve(true)
+          }
+          img.onerror = () => resolve(false)
+        })
+      } catch (error) {
+        console.error("Erro ao carregar logo:", error)
+      }
+    }
+
+    // Nome do Sistema e Título
+    doc.setFontSize(20)
     doc.setTextColor(37, 99, 235) // Azul
-    doc.text(`Relatório de Presença`, 14, 20)
-    
-    doc.setFontSize(14)
+    doc.setFont("helvetica", "bold")
+    doc.text(settings?.systemName || "Check-IN System", 45, yPosition + 8)
+
+    doc.setFontSize(16)
     doc.setTextColor(0, 0, 0)
-    doc.text(eventName, 14, 30)
+    doc.text("Relatório de Presença", 45, yPosition + 16)
 
-    // Estatísticas
-    doc.setFontSize(10)
-    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 40)
+    // Linha decorativa abaixo do cabeçalho
+    doc.setDrawColor(37, 99, 235)
+    doc.setLineWidth(0.5)
+    doc.line(15, yPosition + 28, pageWidth - 15, yPosition + 28)
+
+    yPosition = yPosition + 35
+
+    // ===== INFORMAÇÕES DO EVENTO =====
+    doc.setFontSize(14)
+    doc.setTextColor(37, 99, 235)
+    doc.setFont("helvetica", "bold")
+    doc.text("Evento:", 15, yPosition)
     
-    doc.setFontSize(11)
-    doc.text(`Total de Participantes: ${stats.totalParticipants}`, 14, 50)
-    doc.text(`Check-ins Realizados: ${stats.checkedIn}`, 14, 57)
-    doc.text(`Check-outs Realizados: ${stats.checkedOut}`, 14, 64)
-    doc.text(`Taxa de Presença: ${stats.presenceRate.toFixed(1)}%`, 14, 71)
+    doc.setTextColor(0, 0, 0)
+    doc.setFont("helvetica", "normal")
+    doc.text(eventName, 35, yPosition)
 
-    // Tabela
+    yPosition += 8
+
+    // Data de geração
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, yPosition)
+
+    yPosition += 10
+
+    // ===== ESTATÍSTICAS EM CARDS =====
+    const cardWidth = (pageWidth - 50) / 4
+    const cardHeight = 18
+    const cardStartY = yPosition
+    const cardSpacing = 5
+
+    // Array de estatísticas
+    const statsCards = [
+      {
+        label: "Total de Participantes",
+        value: stats.totalParticipants.toString(),
+        color: [37, 99, 235], // Azul
+      },
+      {
+        label: "Check-ins Realizados",
+        value: stats.checkedIn.toString(),
+        color: [34, 197, 94], // Verde
+      },
+      {
+        label: "Check-outs Realizados",
+        value: stats.checkedOut.toString(),
+        color: [249, 115, 22], // Laranja
+      },
+      {
+        label: "Taxa de Presença",
+        value: `${stats.presenceRate.toFixed(1)}%`,
+        color: [168, 85, 247], // Roxo
+      },
+    ]
+
+    // Desenhar cards de estatísticas
+    statsCards.forEach((stat, index) => {
+      const x = 15 + (cardWidth + cardSpacing) * index
+
+      // Fundo do card com borda
+      doc.setFillColor(250, 250, 250)
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.3)
+      doc.roundedRect(x, cardStartY, cardWidth, cardHeight, 2, 2, "FD")
+
+      // Barra colorida no topo do card
+      doc.setFillColor(stat.color[0], stat.color[1], stat.color[2])
+      doc.rect(x, cardStartY, cardWidth, 3, "F")
+
+      // Valor
+      doc.setFontSize(16)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(stat.color[0], stat.color[1], stat.color[2])
+      doc.text(stat.value, x + cardWidth / 2, cardStartY + 10, { align: "center" })
+
+      // Label
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(100, 100, 100)
+      doc.text(stat.label, x + cardWidth / 2, cardStartY + 15, { align: "center" })
+    })
+
+    yPosition = cardStartY + cardHeight + 10
+
+    // ===== TABELA DE PARTICIPANTES =====
     const tableData = reportData.flatMap((item) => {
       if (item.checkIns.length === 0) {
         return [[
@@ -187,9 +306,19 @@ export default function ReportsPage() {
         item.participant.email,
         item.participant.phone || "-",
         item.participant.company || "-",
-        new Date(checkIn.checkInTime).toLocaleString("pt-BR"),
+        new Date(checkIn.checkInTime).toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         checkIn.checkOutTime
-          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR")
+          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
           : "-",
         checkIn.status === "CHECKED_IN" ? "Presente" : "Saiu",
       ])
@@ -198,22 +327,58 @@ export default function ReportsPage() {
     autoTable(doc, {
       head: [["Nome", "Email", "Telefone", "Empresa", "Check-in", "Check-out", "Status"]],
       body: tableData,
-      startY: 80,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [37, 99, 235], textColor: 255 },
-      alternateRowStyles: { fillColor: [245, 247, 250] },
+      startY: yPosition,
+      theme: "striped",
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+        lineColor: [220, 220, 220],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: 255,
+        fontSize: 10,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
       columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 30 },
-        6: { cellWidth: 20 },
+        0: { cellWidth: 45, fontStyle: "bold" }, // Nome
+        1: { cellWidth: 55 }, // Email
+        2: { cellWidth: 28 }, // Telefone
+        3: { cellWidth: 35 }, // Empresa
+        4: { cellWidth: 30, halign: "center" }, // Check-in
+        5: { cellWidth: 30, halign: "center" }, // Check-out
+        6: { cellWidth: 25, halign: "center" }, // Status
+      },
+      didDrawPage: (data) => {
+        // Rodapé em cada página
+        const pageNumber = data.pageNumber
+        const totalPages = (doc as any).internal.getNumberOfPages()
+        
+        doc.setFontSize(8)
+        doc.setTextColor(150, 150, 150)
+        doc.text(
+          `Página ${pageNumber}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        )
+        
+        // Nome do sistema no rodapé
+        doc.text(
+          settings?.systemName || "Check-IN System",
+          pageWidth - 15,
+          pageHeight - 10,
+          { align: "right" }
+        )
       },
     })
 
-    // Salva
+    // Salva o PDF
     doc.save(`relatorio-${eventName.replace(/\s/g, "-")}.pdf`)
   }
 
