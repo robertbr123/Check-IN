@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer"
+import { prisma } from "./prisma"
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -27,6 +28,14 @@ export async function sendQRCodeEmail({
   eventDate,
   qrCodeDataUrl,
 }: SendQRCodeEmailParams) {
+  // Buscar configurações do sistema
+  const settings = await prisma.settings.findFirst()
+  
+  const systemName = settings?.systemName || "Check-IN System"
+  const emailFromName = settings?.emailFromName || "Check-IN System"
+  const emailSubject = settings?.emailSubject || `Seu QR Code de Check-in`
+  const logoUrl = settings?.logoUrl || null
+  
   const formattedDate = eventDate
     ? new Date(eventDate).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -41,7 +50,20 @@ export async function sendQRCodeEmail({
   const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, "")
   const qrCodeBuffer = Buffer.from(base64Data, "base64")
 
-  const htmlContent = `
+  // Se houver template customizado, usar ele
+  let htmlContent = settings?.emailTemplate || ""
+  
+  if (htmlContent) {
+    // Substituir variáveis do template
+    htmlContent = htmlContent
+      .replace(/\{nome\}/g, participantName)
+      .replace(/\{evento\}/g, eventName)
+      .replace(/\{data\}/g, formattedDate)
+      .replace(/\{qrcode\}/g, '<img src="cid:qrcode" alt="QR Code" style="max-width: 250px; height: auto;" />')
+      .replace(/\{local\}/g, eventLocation || "")
+  } else {
+    // Template padrão
+    htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -176,7 +198,7 @@ export async function sendQRCodeEmail({
           <line x1="15" y1="15" x2="15" y2="15"></line>
         </svg>
       </div>
-      <h1>Checkin Linket</h1>
+      <h1>${systemName}</h1>
     </div>
 
     <div class="content">
@@ -229,7 +251,7 @@ export async function sendQRCodeEmail({
     </div>
 
     <div class="footer">
-      <strong>Checkin Linket</strong><br>
+      <strong>${systemName}</strong><br>
       Sistema de Gerenciamento de Check-in para Eventos<br>
       © ${new Date().getFullYear()} Todos os direitos reservados
     </div>
@@ -237,6 +259,7 @@ export async function sendQRCodeEmail({
 </body>
 </html>
   `
+  }
 
   const textContent = `
 Olá, ${participantName}!
@@ -259,17 +282,17 @@ INSTRUÇÕES:
 Em caso de dúvidas, entre em contato com a organização do evento.
 
 ---
-Checkin Linket
+${systemName}
 Sistema de Gerenciamento de Check-in para Eventos
   `
 
   const mailOptions = {
     from: {
-      name: "Check-IN System",
+      name: emailFromName,
       address: process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@checkin.com",
     },
     to,
-    subject: `🎫 Seu QR Code para ${eventName}`,
+    subject: emailSubject.replace("{evento}", eventName),
     text: textContent,
     html: htmlContent,
     attachments: [

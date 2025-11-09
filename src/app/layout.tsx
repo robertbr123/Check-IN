@@ -3,11 +3,12 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import ThemeProvider from "@/components/providers/ThemeProvider"
 import ToastProvider from "@/components/providers/ToastProvider"
+import { SettingsProvider } from "@/components/providers/SettingsProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Checkin System",
+  title: "Check-IN System",
   description: "Sistema de gerenciamento de check-in para eventos",
 }
 
@@ -25,8 +26,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <ToastProvider />
+          <SettingsProvider>
+            {children}
+            <ToastProvider />
+          </SettingsProvider>
         </ThemeProvider>
       </body>
     </html>

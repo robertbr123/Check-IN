@@ -194,7 +194,7 @@ export default function DashboardPage() {
 
               <div className="pt-3 border-t border-slate-200">
                 <p className="text-xs text-slate-500">
-                  Sistema de Check-IN v1.0.0
+                  Sistema de Check-ON v1.0.0
                 </p>
               </div>
             </div>

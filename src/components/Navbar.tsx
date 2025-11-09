@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react"
 import Link from "next/link"
 import { Button } from "./ui/button"
 import ThemeToggle from "./ThemeToggle"
+import { useSettings } from "./providers/SettingsProvider"
 import {
   Users,
   Calendar,
@@ -19,6 +20,7 @@ import { useState } from "react"
 
 export function Navbar() {
   const { data: session } = useSession()
+  const { settings } = useSettings()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleSignOut = () => {
@@ -35,10 +37,20 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <QrCode className="w-6 h-6 text-white" />
-            </div>
-            <span className="font-bold text-xl text-blue-900">Check-IN</span>
+            {settings?.logoUrl ? (
+              <img 
+                src={settings.logoUrl} 
+                alt={settings.systemName} 
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <QrCode className="w-6 h-6 text-white" />
+              </div>
+            )}
+            <span className="font-bold text-xl text-blue-900">
+              {settings?.systemName || "Check-IN"}
+            </span>
           </Link>
 
           {/* Desktop Menu */}

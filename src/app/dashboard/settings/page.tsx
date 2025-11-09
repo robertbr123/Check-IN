@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Save, Palette, FileText, Mail, Settings as SettingsIcon } from "lucide-react"
+import { Save, Palette, FileText, Mail, Settings as SettingsIcon, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useSettings } from "@/components/providers/SettingsProvider"
 
 interface Settings {
   id: string
@@ -37,6 +38,7 @@ interface Settings {
 export default function SettingsPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const { refreshSettings } = useSettings()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -78,6 +80,10 @@ export default function SettingsPage() {
 
       if (response.ok) {
         alert("Configurações salvas com sucesso!")
+        // Atualizar configurações globalmente
+        await refreshSettings()
+        // Recarregar a página para aplicar mudanças
+        window.location.reload()
       } else {
         alert("Erro ao salvar configurações")
       }
