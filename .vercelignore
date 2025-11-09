@@ -1,0 +1,77 @@
+# ==============================================================================
+# .vercelignore
+# ==============================================================================
+# Arquivos e diretórios ignorados no deploy da Vercel
+# ==============================================================================
+
+# Development
+.env
+.env.local
+.env.development
+.env.test
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Database
+*.db
+*.sqlite
+*.sql
+*.sql.gz
+
+# Backups
+backups/
+
+# Nginx
+nginx/
+
+# Scripts
+scripts/deploy.sh
+scripts/backup.sh
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+coverage/
+.nyc_output/
+__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Documentation (opcional - mantenha se quiser)
+DEPLOY.md
+DOCKER*.md
+TESTE_AGORA.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build (Vercel gerencia isso)
+.next/
+out/
+build/
+dist/
+
+# Dependencies (Vercel instala)
+node_modules/
