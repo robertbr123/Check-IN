@@ -53,6 +53,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, description, location, startDate, endDate, capacity } = body
 
+    console.log("Criando evento com dados:", { name, location, startDate, endDate, capacity, createdBy: session.user.id })
+
     const event = await prisma.event.create({
       data: {
         name,
@@ -70,11 +72,14 @@ export async function POST(request: Request) {
       },
     })
 
+    console.log("Evento criado com sucesso:", event.id)
+
     return NextResponse.json(event)
   } catch (error) {
-    console.error("Erro ao criar evento:", error)
+    console.error("Erro detalhado ao criar evento:", error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
-      { error: "Erro ao criar evento" },
+      { error: "Erro ao criar evento", details: errorMessage },
       { status: 500 }
     )
   }
