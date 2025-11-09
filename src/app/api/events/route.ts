@@ -15,6 +15,9 @@ export async function GET() {
     }
 
     const events = await prisma.event.findMany({
+      where: {
+        deletedAt: null, // Apenas eventos não excluídos
+      },
       include: {
         _count: {
           select: { eventParticipants: true },

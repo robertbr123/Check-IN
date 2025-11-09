@@ -68,16 +68,19 @@ export async function DELETE(
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
     }
 
-    // Deleta a inscrição no evento (não o participante)
-    await prisma.eventParticipant.delete({
+    // Soft delete - apenas cancela a inscrição, mantém histórico
+    await prisma.eventParticipant.update({
       where: { id: params.id },
+      data: {
+        status: "CANCELLED",
+      },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Erro ao excluir participante:", error)
+    console.error("Erro ao cancelar inscrição:", error)
     return NextResponse.json(
-      { error: "Erro ao excluir participante" },
+      { error: "Erro ao cancelar inscrição" },
       { status: 500 }
     )
   }

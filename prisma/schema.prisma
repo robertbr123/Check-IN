@@ -37,16 +37,17 @@ model User {
 }
 
 model Event {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
   location    String
   startDate   DateTime
   endDate     DateTime
   capacity    Int?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  active      Boolean   @default(true)
+  deletedAt   DateTime? // Soft delete - mantém histórico
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   createdBy   String
   
   creator           User                @relation("EventCreatedBy", fields: [createdBy], references: [id])
