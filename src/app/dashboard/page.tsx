@@ -1,6 +1,8 @@
 "use client"
 
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,9 +11,22 @@ import { useRealtimeStats } from "@/hooks/useRealtimeStats"
 
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const { stats, loading, lastUpdate, refresh } = useRealtimeStats(10000) // Atualiza a cada 10 segundos
 
+  // Redirecionar OPERADOR para o scanner
+  useEffect(() => {
+    if (session?.user?.role === "OPERADOR") {
+      router.push("/dashboard/scanner")
+    }
+  }, [session, router])
+
   const isAdmin = session?.user?.role === "ADMIN"
+  
+  // Se for operador, não renderizar nada (está redirecionando)
+  if (session?.user?.role === "OPERADOR") {
+    return null
+  }
   
   const formatLastUpdate = () => {
     if (!lastUpdate) return "Nunca"

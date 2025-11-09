@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { QrCode, Camera, CheckCircle2, XCircle, User, Calendar, Clock } from "lucide-react"
+import { QrCode, Camera, CheckCircle2, XCircle, User, Calendar, Clock, Maximize, Minimize } from "lucide-react"
 import { Html5Qrcode } from "html5-qrcode"
 
 interface ScanResult {
@@ -23,10 +24,13 @@ interface ScanResult {
 }
 
 export default function ScannerPage() {
+  const { data: session } = useSession()
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<ScanResult | null>(null)
   const [recentScans, setRecentScans] = useState<ScanResult[]>([])
+  const [fullscreen, setFullscreen] = useState(false)
   const scannerRef = useRef<Html5Qrcode | null>(null)
+  const isOperador = session?.user?.role === "OPERADOR"
 
   const startScanner = async () => {
     try {
@@ -134,6 +138,17 @@ export default function ScannerPage() {
     audio.play().catch(() => {})
   }
 
+  const toggleFullscreen = () => {
+    setFullscreen(!fullscreen)
+  }
+
+  // Auto-iniciar scanner para operadores
+  useEffect(() => {
+    if (isOperador && !scanning) {
+      startScanner()
+    }
+  }, [isOperador])
+
   useEffect(() => {
     return () => {
       stopScanner()
@@ -141,34 +156,67 @@ export default function ScannerPage() {
   }, [])
 
   return (
-    <div className="space-y-6">
+    <div className={`${fullscreen ? 'fixed inset-0 z-50 bg-white overflow-auto' : 'space-y-6'}`}>
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-blue-900">Scanner de QR Code</h1>
-        <p className="text-slate-600 mt-2">
-          Escaneie o QR code dos participantes para fazer check-in/check-out
-        </p>
-      </div>
+      {!fullscreen && !isOperador && (
+        <div>
+          <h1 className="text-3xl font-bold text-blue-900">Scanner de QR Code</h1>
+          <p className="text-slate-600 mt-2">
+            Escaneie o QR code dos participantes para fazer check-in/check-out
+          </p>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 ${!fullscreen && !isOperador ? 'lg:grid-cols-3' : ''} gap-6 ${fullscreen ? 'p-4' : ''}`}>
         {/* Scanner */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Câmera</CardTitle>
-              <CardDescription>
-                Aponte a câmera para o QR code do participante
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <div className={`${!fullscreen && !isOperador ? 'lg:col-span-2' : ''}`}>
+          <Card className={fullscreen ? 'border-0 shadow-none' : ''}>
+            {!fullscreen && (
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Câmera</CardTitle>
+                    <CardDescription>
+                      Aponte a câmera para o QR code do participante
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleFullscreen}
+                    className="gap-2"
+                  >
+                    <Maximize className="w-4 h-4" />
+                    Tela Cheia
+                  </Button>
+                </div>
+              </CardHeader>
+            )}
+            <CardContent className={fullscreen ? 'p-0' : ''}>
               <div className="space-y-4">
+                {/* Fullscreen Header */}
+                {fullscreen && (
+                  <div className="flex items-center justify-between p-4 bg-blue-600 text-white">
+                    <h2 className="text-xl font-bold">Scanner QR Code</h2>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      className="gap-2 bg-white text-blue-600"
+                    >
+                      <Minimize className="w-4 h-4" />
+                      Sair
+                    </Button>
+                  </div>
+                )}
+
                 {/* Scanner Container */}
                 <div
                   id="reader"
                   className={`w-full rounded-lg overflow-hidden border-4 ${
                     scanning ? "border-blue-600" : "border-slate-300"
-                  }`}
-                  style={{ minHeight: "400px" }}
+                  } ${fullscreen ? 'h-[60vh]' : ''}`}
+                  style={{ minHeight: fullscreen ? '60vh' : "400px" }}
                 ></div>
 
                 {/* Result Display */}
@@ -248,7 +296,7 @@ export default function ScannerPage() {
                 )}
 
                 {/* Control Buttons */}
-                <div className="flex gap-3">
+                <div className={`flex gap-3 ${fullscreen ? 'px-4' : ''}`}>
                   {!scanning ? (
                     <Button onClick={startScanner} className="flex-1 gap-2" size="lg">
                       <Camera className="w-5 h-5" />
@@ -272,7 +320,8 @@ export default function ScannerPage() {
         </div>
 
         {/* Recent Scans */}
-        <div>
+        {!fullscreen && !isOperador && (
+          <div>
           <Card>
             <CardHeader>
               <CardTitle>Scans Recentes</CardTitle>
@@ -337,6 +386,7 @@ export default function ScannerPage() {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </div>
   )

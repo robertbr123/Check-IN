@@ -29,6 +29,7 @@ export function Navbar() {
 
   const isAdmin = session?.user?.role === "ADMIN"
   const isGestor = session?.user?.role === "GESTOR" || isAdmin
+  const isOperador = session?.user?.role === "OPERADOR"
   const canAccessScanner = true // Todos podem acessar o scanner
 
   return (
@@ -48,13 +49,16 @@ export function Navbar() {
                 <QrCode className="w-6 h-6 text-white" />
               </div>
             )}
-            <span className="font-bold text-xl text-blue-900">
-              {settings?.systemName || "Check-IN"}
-            </span>
+            {!isOperador && (
+              <span className="font-bold text-xl text-blue-900">
+                {settings?.systemName || "Check-IN"}
+              </span>
+            )}
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-1">
+          {!isOperador && (
+            <div className="hidden md:flex items-center space-x-1">
             {canAccessScanner && (
               <Link href="/dashboard/scanner">
                 <Button variant="ghost" className="flex items-center gap-2">
@@ -107,15 +111,18 @@ export function Navbar() {
               </>
             )}
           </div>
+          )}
 
           {/* User Info & Logout */}
           <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle />
+            {!isOperador && <ThemeToggle />}
             <div className="text-right">
               <p className="text-sm font-medium">
                 {session?.user?.name}
               </p>
-              <p className="text-xs text-muted-foreground">{session?.user?.role}</p>
+              {!isOperador && (
+                <p className="text-xs text-muted-foreground">{session?.user?.role}</p>
+              )}
             </div>
             <Button
               variant="outline"
@@ -144,7 +151,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
+        {mobileMenuOpen && !isOperador && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-2">
               {canAccessScanner && (
