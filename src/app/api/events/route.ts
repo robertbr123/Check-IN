@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -14,8 +14,12 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
+    // Verificar se deve incluir eventos deletados (para relatórios)
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+
     const events = await prisma.event.findMany({
-      where: {
+      where: includeDeleted ? {} : {
         deletedAt: null, // Apenas eventos não excluídos
       },
       include: {

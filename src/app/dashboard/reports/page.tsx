@@ -21,6 +21,9 @@ import autoTable from "jspdf-autotable"
 interface Event {
   id: string
   name: string
+  deletedAt: string | null
+  startDate: string
+  endDate: string
 }
 
 interface ReportData {
@@ -64,7 +67,8 @@ export default function ReportsPage() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch("/api/events")
+      // Incluir eventos deletados para permitir visualização de relatórios históricos
+      const response = await fetch("/api/events?includeDeleted=true")
       if (response.ok) {
         const data = await response.json()
         setEvents(data)
@@ -210,6 +214,9 @@ export default function ReportsPage() {
     yPosition = yPosition + 35
 
     // ===== INFORMAÇÕES DO EVENTO =====
+    const selectedEventData = events.find(e => e.id === selectedEvent)
+    const isArchived = selectedEventData?.deletedAt !== null
+    
     doc.setFontSize(14)
     doc.setTextColor(37, 99, 235)
     doc.setFont("helvetica", "bold")
@@ -218,6 +225,13 @@ export default function ReportsPage() {
     doc.setTextColor(0, 0, 0)
     doc.setFont("helvetica", "normal")
     doc.text(eventName, 35, yPosition)
+    
+    // Badge de evento arquivado
+    if (isArchived) {
+      doc.setFontSize(10)
+      doc.setTextColor(100, 100, 100)
+      doc.text("(ARQUIVADO)", 35 + doc.getTextWidth(eventName) + 3, yPosition)
+    }
 
     yPosition += 8
 
@@ -407,8 +421,17 @@ export default function ReportsPage() {
       {/* Event Selector */}
       <Card>
         <CardHeader>
-          <CardTitle>Selecionar Evento</CardTitle>
-          <CardDescription>Escolha o evento para visualizar o relatório</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Selecionar Evento</CardTitle>
+              <CardDescription>Escolha o evento para visualizar o relatório</CardDescription>
+            </div>
+            {selectedEvent && events.find(e => e.id === selectedEvent)?.deletedAt && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <span>📦</span> Evento Arquivado
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
@@ -419,7 +442,14 @@ export default function ReportsPage() {
               <SelectContent>
                 {events.map((event) => (
                   <SelectItem key={event.id} value={event.id}>
-                    {event.name}
+                    <div className="flex items-center gap-2">
+                      <span>{event.name}</span>
+                      {event.deletedAt && (
+                        <Badge variant="secondary" className="text-xs">
+                          Arquivado
+                        </Badge>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
