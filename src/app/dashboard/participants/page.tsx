@@ -257,13 +257,12 @@ export default function ParticipantsPage() {
               <Label htmlFor="filterEvent">Filtrar por Evento</Label>
               <Select
                 value={filterEventId || undefined}
-                onValueChange={setFilterEventId}
+                onValueChange={(value) => setFilterEventId(value || "")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os eventos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os eventos</SelectItem>
                   {events.map((event) => (
                     <SelectItem key={event.id} value={event.id}>
                       {event.name}
@@ -271,6 +270,14 @@ export default function ParticipantsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {filterEventId && (
+                <button
+                  onClick={() => setFilterEventId("")}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Mostrar todos os eventos
+                </button>
+              )}
             </div>
           </div>
           {(searchTerm || filterEventId) && (
