@@ -15,8 +15,9 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const participants = await prisma.participant.findMany({
+    const eventParticipants = await prisma.eventParticipant.findMany({
       include: {
+        participant: true,
         event: {
           select: {
             id: true,
@@ -25,11 +26,11 @@ export async function GET() {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        registeredAt: "desc",
       },
     })
 
-    return NextResponse.json(participants)
+    return NextResponse.json(eventParticipants)
   } catch (error) {
     console.error("Erro ao listar participantes:", error)
     return NextResponse.json(
@@ -54,36 +55,55 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, email, phone, document, company, position, eventId } = body
 
-    // Verifica se já existe participante com mesmo email no evento
-    const existing = await prisma.participant.findFirst({
-      where: {
-        email,
-        eventId,
+    // 1. Buscar ou criar participante
+    const participant = await prisma.participant.upsert({
+      where: { email },
+      update: {
+        name,
+        phone,
+        document,
+        company,
+        position,
       },
-    })
-
-    if (existing) {
-      return NextResponse.json(
-        { error: "Participante já cadastrado neste evento" },
-        { status: 400 }
-      )
-    }
-
-    // Gera QR code único
-    const qrCode = generateQRCode()
-
-    const participant = await prisma.participant.create({
-      data: {
+      create: {
         name,
         email,
         phone,
         document,
         company,
         position,
-        qrCode,
+      },
+    })
+
+    // 2. Verificar se já está inscrito neste evento
+    const existingRegistration = await prisma.eventParticipant.findUnique({
+      where: {
+        participantId_eventId: {
+          participantId: participant.id,
+          eventId,
+        },
+      },
+    })
+
+    if (existingRegistration) {
+      return NextResponse.json(
+        { error: "Participante já cadastrado neste evento" },
+        { status: 400 }
+      )
+    }
+
+    // 3. Criar inscrição no evento com QR Code único
+    const qrCode = generateQRCode()
+    
+    const eventParticipant = await prisma.eventParticipant.create({
+      data: {
+        participantId: participant.id,
         eventId,
+        qrCode,
+        status: "CONFIRMED",
       },
       include: {
+        participant: true,
         event: {
           select: {
             id: true,
@@ -93,7 +113,7 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json(participant)
+    return NextResponse.json(eventParticipant)
   } catch (error) {
     console.error("Erro ao criar participante:", error)
     return NextResponse.json(

@@ -18,11 +18,15 @@ export async function GET(
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const participant = await prisma.participant.findUnique({
+    const eventParticipant = await prisma.eventParticipant.findUnique({
       where: { id: params.id },
+      include: {
+        participant: true,
+        event: true,
+      },
     })
 
-    if (!participant) {
+    if (!eventParticipant) {
       return NextResponse.json(
         { error: "Participante não encontrado" },
         { status: 404 }
@@ -30,7 +34,7 @@ export async function GET(
     }
 
     // Gera o QR code como data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(participant.qrCode, {
+    const qrCodeDataUrl = await QRCode.toDataURL(eventParticipant.qrCode, {
       width: 400,
       margin: 2,
       color: {
@@ -41,7 +45,7 @@ export async function GET(
 
     return NextResponse.json({
       qrCode: qrCodeDataUrl,
-      qrCodeText: participant.qrCode,
+      qrCodeText: eventParticipant.qrCode,
     })
   } catch (error) {
     console.error("Erro ao gerar QR code:", error)

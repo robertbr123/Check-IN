@@ -18,8 +18,9 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, email, phone, document, company, position, eventId } = body
+    const { name, email, phone, document, company, position } = body
 
+    // Atualiza o participante
     const participant = await prisma.participant.update({
       where: { id: params.id },
       data: {
@@ -29,9 +30,14 @@ export async function PUT(
         document,
         company,
         position,
-        eventId,
       },
+    })
+
+    // Retorna com as inscrições
+    const eventParticipant = await prisma.eventParticipant.findFirst({
+      where: { participantId: params.id },
       include: {
+        participant: true,
         event: {
           select: {
             id: true,
@@ -41,7 +47,7 @@ export async function PUT(
       },
     })
 
-    return NextResponse.json(participant)
+    return NextResponse.json(eventParticipant)
   } catch (error) {
     console.error("Erro ao atualizar participante:", error)
     return NextResponse.json(
@@ -62,7 +68,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
     }
 
-    await prisma.participant.delete({
+    // Deleta a inscrição no evento (não o participante)
+    await prisma.eventParticipant.delete({
       where: { id: params.id },
     })
 

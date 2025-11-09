@@ -32,7 +32,7 @@ export async function PUT(
       },
       include: {
         _count: {
-          select: { participants: true },
+          select: { eventParticipants: true },
         },
       },
     })

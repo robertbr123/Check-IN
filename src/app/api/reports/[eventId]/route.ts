@@ -21,13 +21,13 @@ export async function GET(
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
     }
 
-    // Busca todos os participantes do evento com seus check-ins
-    const participants = await prisma.participant.findMany({
+    // Busca todas as inscrições do evento com seus check-ins
+    const eventParticipants = await prisma.eventParticipant.findMany({
       where: {
         eventId: params.eventId,
-        active: true,
       },
       include: {
+        participant: true,
         checkIns: {
           orderBy: {
             checkInTime: "desc",
@@ -37,17 +37,17 @@ export async function GET(
     })
 
     // Calcula estatísticas
-    const totalParticipants = participants.length
-    const participantsWithCheckIn = participants.filter(
-      (p) => p.checkIns.length > 0
+    const totalParticipants = eventParticipants.length
+    const participantsWithCheckIn = eventParticipants.filter(
+      (ep) => ep.checkIns.length > 0
     ).length
     
-    const checkedIn = participants.filter(
-      (p) => p.checkIns.length > 0 && p.checkIns[0].status === "CHECKED_IN"
+    const checkedIn = eventParticipants.filter(
+      (ep) => ep.checkIns.length > 0 && ep.checkIns[0].status === "CHECKED_IN"
     ).length
 
-    const checkedOut = participants.filter(
-      (p) => p.checkIns.length > 0 && p.checkIns[0].status === "CHECKED_OUT"
+    const checkedOut = eventParticipants.filter(
+      (ep) => ep.checkIns.length > 0 && ep.checkIns[0].status === "CHECKED_OUT"
     ).length
 
     const presenceRate = totalParticipants > 0 
@@ -55,19 +55,19 @@ export async function GET(
       : 0
 
     // Formata os dados para o relatório
-    const reportData = participants.map((participant) => ({
+    const reportData = eventParticipants.map((ep) => ({
       participant: {
-        name: participant.name,
-        email: participant.email,
-        phone: participant.phone,
-        company: participant.company,
+        name: ep.participant.name,
+        email: ep.participant.email,
+        phone: ep.participant.phone,
+        company: ep.participant.company,
       },
-      checkIns: participant.checkIns.map((checkIn) => ({
+      checkIns: ep.checkIns.map((checkIn) => ({
         checkInTime: checkIn.checkInTime,
         checkOutTime: checkIn.checkOutTime,
         status: checkIn.status,
       })),
-      totalCheckIns: participant.checkIns.length,
+      totalCheckIns: ep.checkIns.length,
     }))
 
     return NextResponse.json({

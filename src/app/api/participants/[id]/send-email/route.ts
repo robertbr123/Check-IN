@@ -21,15 +21,16 @@ export async function POST(
 
     const participantId = params.id
 
-    // Busca o participante com informações do evento
-    const participant = await prisma.participant.findUnique({
+    // Busca a inscrição do participante com informações do evento
+    const eventParticipant = await prisma.eventParticipant.findUnique({
       where: { id: participantId },
       include: {
+        participant: true,
         event: true,
       },
     })
 
-    if (!participant) {
+    if (!eventParticipant) {
       return NextResponse.json(
         { error: "Participante não encontrado" },
         { status: 404 }
@@ -37,7 +38,7 @@ export async function POST(
     }
 
     // Gera QR Code como Data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(participant.qrCode, {
+    const qrCodeDataUrl = await QRCode.toDataURL(eventParticipant.qrCode, {
       width: 300,
       margin: 2,
       color: {
@@ -48,11 +49,11 @@ export async function POST(
 
     // Envia o email
     await sendQRCodeEmail({
-      to: participant.email,
-      participantName: participant.name,
-      eventName: participant.event.name,
-      eventLocation: participant.event.location || undefined,
-      eventDate: participant.event.startDate,
+      to: eventParticipant.participant.email,
+      participantName: eventParticipant.participant.name,
+      eventName: eventParticipant.event.name,
+      eventLocation: eventParticipant.event.location || undefined,
+      eventDate: eventParticipant.event.startDate,
       qrCodeDataUrl,
     })
 

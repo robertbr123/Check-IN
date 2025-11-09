@@ -15,11 +15,11 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const [totalEvents, totalParticipants, totalCheckIns, totalUsers] = await Promise.all([
-      prisma.event.count({ where: { active: true } }),
-      prisma.participant.count({ where: { active: true } }),
+        const [totalEvents, totalParticipants, totalCheckIns, totalUsers] = await Promise.all([
+      prisma.event.count(),
+      prisma.eventParticipant.count(),
       prisma.checkIn.count(),
-      session.user.role === "ADMIN" ? prisma.user.count({ where: { active: true } }) : 0,
+      prisma.user.count(),
     ])
 
     return NextResponse.json({
