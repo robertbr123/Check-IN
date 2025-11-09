@@ -10,23 +10,16 @@ export async function GET() {
       users: await prisma.user.count(),
       events: await prisma.event.count(),
       participants: await prisma.participant.count(),
+      eventParticipants: await prisma.eventParticipant.count(),
       checkIns: await prisma.checkIn.count(),
       
-      // Participantes agrupados por email (para ver duplicatas)
-      uniqueEmails: await prisma.participant.groupBy({
-        by: ['email'],
-        _count: {
-          email: true
-        }
-      }),
-      
-      // Eventos com participantes
+      // Eventos com inscrições
       eventsWithParticipants: await prisma.event.findMany({
         select: {
           id: true,
           name: true,
           _count: {
-            select: { participants: true }
+            select: { eventParticipants: true }
           }
         }
       })
@@ -35,7 +28,6 @@ export async function GET() {
     return NextResponse.json({
       status: "ok",
       stats,
-      duplicateEmails: stats.uniqueEmails.filter(e => e._count.email > 1)
     })
   } catch (error) {
     return NextResponse.json({
