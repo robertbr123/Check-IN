@@ -48,7 +48,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-blue-900">Check-IN System</h1>
+          <h1 className="text-3xl font-bold text-blue-900">Check-in System</h1>
           <p className="text-slate-600 mt-2">Sistema de gerenciamento de eventos</p>
         </div>
 
@@ -98,7 +98,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-sm text-slate-600 mt-6">
-          Desenvolvido com Next.js e Prisma
+          Desenvolvido por Robert Albino
         </p>
       </div>
     </div>

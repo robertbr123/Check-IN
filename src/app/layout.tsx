@@ -7,7 +7,7 @@ import ToastProvider from "@/components/providers/ToastProvider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Check-IN System",
+  title: "Checkin System",
   description: "Sistema de gerenciamento de check-in para eventos",
 }
 

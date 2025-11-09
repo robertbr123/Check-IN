@@ -37,6 +37,10 @@ export async function sendQRCodeEmail({
       })
     : "A definir"
 
+  // Converte Data URL para Buffer
+  const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, "")
+  const qrCodeBuffer = Buffer.from(base64Data, "base64")
+
   const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -172,7 +176,7 @@ export async function sendQRCodeEmail({
           <line x1="15" y1="15" x2="15" y2="15"></line>
         </svg>
       </div>
-      <h1>Check-IN System</h1>
+      <h1>Checkin Linket</h1>
     </div>
 
     <div class="content">
@@ -205,7 +209,7 @@ export async function sendQRCodeEmail({
       <div class="qr-section">
         <h3>🎫 Seu QR Code Pessoal</h3>
         <div class="qr-code">
-          <img src="${qrCodeDataUrl}" alt="QR Code" />
+          <img src="cid:qrcode" alt="QR Code" style="max-width: 250px; height: auto; display: block;" />
         </div>
       </div>
 
@@ -225,7 +229,7 @@ export async function sendQRCodeEmail({
     </div>
 
     <div class="footer">
-      <strong>Check-IN System</strong><br>
+      <strong>Checkin Linket</strong><br>
       Sistema de Gerenciamento de Check-in para Eventos<br>
       © ${new Date().getFullYear()} Todos os direitos reservados
     </div>
@@ -255,7 +259,7 @@ INSTRUÇÕES:
 Em caso de dúvidas, entre em contato com a organização do evento.
 
 ---
-Check-IN System
+Checkin Linket
 Sistema de Gerenciamento de Check-in para Eventos
   `
 
@@ -268,6 +272,13 @@ Sistema de Gerenciamento de Check-in para Eventos
     subject: `🎫 Seu QR Code para ${eventName}`,
     text: textContent,
     html: htmlContent,
+    attachments: [
+      {
+        filename: "qrcode.png",
+        content: qrCodeBuffer,
+        cid: "qrcode", // Content-ID para usar no HTML como cid:qrcode
+      },
+    ],
   }
 
   try {
