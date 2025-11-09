@@ -49,48 +49,61 @@ model Event {
   updatedAt   DateTime @updatedAt
   createdBy   String
   
-  creator      User           @relation("EventCreatedBy", fields: [createdBy], references: [id])
-  participants Participant[]
-  checkIns     CheckIn[]
+  creator           User                @relation("EventCreatedBy", fields: [createdBy], references: [id])
+  eventParticipants EventParticipant[]
+  checkIns          CheckIn[]
   
   @@map("events")
 }
 
 model Participant {
-  id          String   @id @default(cuid())
-  name        String
-  email       String
-  phone       String?
-  document    String?
-  company     String?
-  position    String?
-  qrCode      String   @unique
-  photoUrl    String?
-  eventId     String
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  document  String?
+  company   String?
+  position  String?
+  photoUrl  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   
-  event    Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  checkIns CheckIn[]
+  eventParticipants EventParticipant[]
   
-  @@unique([email, eventId])
   @@map("participants")
 }
 
-model CheckIn {
-  id            String          @id @default(cuid())
+model EventParticipant {
+  id            String   @id @default(cuid())
   participantId String
   eventId       String
-  checkInTime   DateTime        @default(now())
-  checkOutTime  DateTime?
-  status        CheckInStatus   @default(CHECKED_IN)
-  scannedBy     String?
-  location      String?
-  notes         String?
+  qrCode        String   @unique
+  status        String   @default("CONFIRMED") // CONFIRMED, CANCELLED, ATTENDED
+  registeredAt  DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   
-  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id])
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  checkIns    CheckIn[]
+  
+  @@unique([participantId, eventId])
+  @@map("event_participants")
+}
+
+model CheckIn {
+  id                   String          @id @default(cuid())
+  eventParticipantId   String
+  eventId              String
+  checkInTime          DateTime        @default(now())
+  checkOutTime         DateTime?
+  status               CheckInStatus   @default(CHECKED_IN)
+  scannedBy            String?
+  location             String?
+  notes                String?
+  
+  eventParticipant EventParticipant @relation(fields: [eventParticipantId], references: [id], onDelete: Cascade)
+  event            Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
   
   @@map("check_ins")
 }
