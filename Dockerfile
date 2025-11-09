@@ -33,6 +33,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Criar pasta public se não existir
+RUN mkdir -p public
+
 # Gerar Prisma Client
 RUN npx prisma generate
 
@@ -76,10 +79,10 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/node_modules/.prisma ./node_modules/.prisma
 
-# Copiar arquivos públicos e gerados
-COPY --from=builder /app/public ./public
+# Copiar arquivos necessários do builder
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
 # Ajustar permissões
