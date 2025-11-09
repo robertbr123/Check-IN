@@ -32,6 +32,46 @@ export function Navbar() {
   const isOperador = session?.user?.role === "OPERADOR"
   const canAccessScanner = true // Todos podem acessar o scanner
 
+  // Navbar simplificado para OPERADOR
+  if (isOperador) {
+    return (
+      <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo e Nome do Sistema */}
+            <div className="flex items-center space-x-2">
+              {settings?.logoUrl ? (
+                <img 
+                  src={settings.logoUrl} 
+                  alt={settings.systemName} 
+                  className="h-10 w-auto object-contain"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <QrCode className="w-6 h-6 text-white" />
+                </div>
+              )}
+              <span className="font-bold text-xl text-blue-900">
+                {settings?.systemName || "Check-IN"}
+              </span>
+            </div>
+
+            {/* Botão Sair */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </nav>
+    )
+  }
+
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
@@ -49,16 +89,13 @@ export function Navbar() {
                 <QrCode className="w-6 h-6 text-white" />
               </div>
             )}
-            {!isOperador && (
-              <span className="font-bold text-xl text-blue-900">
-                {settings?.systemName || "Check-IN"}
-              </span>
-            )}
+            <span className="font-bold text-xl text-blue-900">
+              {settings?.systemName || "Check-IN"}
+            </span>
           </Link>
 
           {/* Desktop Menu */}
-          {!isOperador && (
-            <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-1">
             {canAccessScanner && (
               <Link href="/dashboard/scanner">
                 <Button variant="ghost" className="flex items-center gap-2">
@@ -111,18 +148,15 @@ export function Navbar() {
               </>
             )}
           </div>
-          )}
 
           {/* User Info & Logout */}
           <div className="hidden md:flex items-center gap-3">
-            {!isOperador && <ThemeToggle />}
+            <ThemeToggle />
             <div className="text-right">
               <p className="text-sm font-medium">
                 {session?.user?.name}
               </p>
-              {!isOperador && (
-                <p className="text-xs text-muted-foreground">{session?.user?.role}</p>
-              )}
+              <p className="text-xs text-muted-foreground">{session?.user?.role}</p>
             </div>
             <Button
               variant="outline"
@@ -151,7 +185,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && !isOperador && (
+        {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-2">
               {canAccessScanner && (
