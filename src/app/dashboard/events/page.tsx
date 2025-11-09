@@ -83,9 +83,14 @@ export default function EventsPage() {
         fetchEvents()
         setDialogOpen(false)
         resetForm()
+      } else {
+        const error = await response.json()
+        console.error("Erro da API:", error)
+        alert(error.error || "Erro ao salvar evento")
       }
     } catch (error) {
       console.error("Erro ao salvar evento:", error)
+      alert("Erro ao salvar evento. Verifique o console para mais detalhes.")
     }
   }
 
