@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, QrCode, Download, Mail } from "lucide-react"
+import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -20,15 +20,19 @@ import ImportCSV from "@/components/ImportCSV"
 
 interface Participant {
   id: string
-  name: string
-  email: string
-  phone: string | null
-  document: string | null
-  company: string | null
-  position: string | null
   qrCode: string
+  status: string
+  registeredAt: string
   eventId: string
-  active: boolean
+  participantId: string
+  participant: {
+    name: string
+    email: string
+    phone: string | null
+    document: string | null
+    company: string | null
+    position: string | null
+  }
   event: {
     id: string
     name: string
@@ -50,6 +54,8 @@ export default function ParticipantsPage() {
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
   const [qrCodeImage, setQrCodeImage] = useState<string>("")
   const [selectedEventForImport, setSelectedEventForImport] = useState<string>("")
+  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [filterEventId, setFilterEventId] = useState<string>("")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -63,11 +69,16 @@ export default function ParticipantsPage() {
   useEffect(() => {
     fetchParticipants()
     fetchEvents()
-  }, [])
+  }, [searchTerm, filterEventId])
 
   const fetchParticipants = async () => {
     try {
-      const response = await fetch("/api/participants")
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      if (filterEventId) params.append('eventId', filterEventId)
+      
+      const url = `/api/participants${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         setParticipants(data)
@@ -136,12 +147,12 @@ export default function ParticipantsPage() {
   const handleEdit = (participant: Participant) => {
     setEditingParticipant(participant)
     setFormData({
-      name: participant.name,
-      email: participant.email,
-      phone: participant.phone || "",
-      document: participant.document || "",
-      company: participant.company || "",
-      position: participant.position || "",
+      name: participant.participant.name,
+      email: participant.participant.email,
+      phone: participant.participant.phone || "",
+      document: participant.participant.document || "",
+      company: participant.participant.company || "",
+      position: participant.participant.position || "",
       eventId: participant.eventId,
     })
     setDialogOpen(true)
@@ -166,7 +177,7 @@ export default function ParticipantsPage() {
 
     const link = document.createElement("a")
     link.href = qrCodeImage
-    link.download = `qrcode-${selectedParticipant.name.replace(/\s/g, "-")}.png`
+    link.download = `qrcode-${selectedParticipant.participant.name.replace(/\s/g, "-")}.png`
     link.click()
   }
 
@@ -220,6 +231,64 @@ export default function ParticipantsPage() {
         eventId={selectedEventForImport}
         onImportComplete={fetchParticipants}
       />
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros de Pesquisa</CardTitle>
+          <CardDescription>Pesquise por nome, email, empresa ou filtre por evento</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="search">Pesquisar</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  id="search"
+                  placeholder="Nome, email ou empresa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="filterEvent">Filtrar por Evento</Label>
+              <Select
+                value={filterEventId || undefined}
+                onValueChange={setFilterEventId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os eventos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os eventos</SelectItem>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {(searchTerm || filterEventId) && (
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("")
+                  setFilterEventId("")
+                }}
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Event Selector for Import */}
       <Card>
@@ -285,20 +354,20 @@ export default function ParticipantsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                       <div>
-                        <p className="font-medium text-slate-900">{participant.name}</p>
-                        <p className="text-sm text-slate-500">{participant.email}</p>
-                        {participant.phone && (
-                          <p className="text-sm text-slate-500">{participant.phone}</p>
+                        <p className="font-medium text-slate-900">{participant.participant.name}</p>
+                        <p className="text-sm text-slate-500">{participant.participant.email}</p>
+                        {participant.participant.phone && (
+                          <p className="text-sm text-slate-500">{participant.participant.phone}</p>
                         )}
                       </div>
                       <Badge variant="outline" className="text-blue-600 border-blue-300">
                         {participant.event.name}
                       </Badge>
-                      {participant.company && (
-                        <Badge variant="secondary">{participant.company}</Badge>
+                      {participant.participant.company && (
+                        <Badge variant="secondary">{participant.participant.company}</Badge>
                       )}
-                      {!participant.active && (
-                        <Badge variant="secondary">Inativo</Badge>
+                      {participant.status === "CANCELLED" && (
+                        <Badge variant="secondary">Cancelado</Badge>
                       )}
                     </div>
                   </div>
@@ -462,7 +531,7 @@ export default function ParticipantsPage() {
           <DialogHeader>
             <DialogTitle>QR Code do Participante</DialogTitle>
             <DialogDescription>
-              {selectedParticipant?.name} - {selectedParticipant?.event.name}
+              {selectedParticipant?.participant.name} - {selectedParticipant?.event.name}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center py-6 space-y-4">

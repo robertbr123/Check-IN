@@ -58,6 +58,29 @@ export async function DELETE(
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
     }
 
+    // Primeiro buscar todos os EventParticipants deste evento
+    const eventParticipants = await prisma.eventParticipant.findMany({
+      where: { eventId: params.id },
+      select: { id: true }
+    })
+
+    // Excluir todos os CheckIns relacionados aos EventParticipants
+    if (eventParticipants.length > 0) {
+      await prisma.checkIn.deleteMany({
+        where: {
+          eventParticipantId: {
+            in: eventParticipants.map(ep => ep.id)
+          }
+        }
+      })
+    }
+
+    // Excluir todos os EventParticipants deste evento
+    await prisma.eventParticipant.deleteMany({
+      where: { eventId: params.id }
+    })
+
+    // Finalmente, excluir o evento
     await prisma.event.delete({
       where: { id: params.id },
     })

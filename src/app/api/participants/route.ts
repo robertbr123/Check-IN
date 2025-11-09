@@ -7,7 +7,7 @@ import { generateQRCode } from "@/lib/utils"
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -15,7 +15,30 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
+    // Extrair query params
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search') || ''
+    const eventId = searchParams.get('eventId') || ''
+
+    // Construir filtros
+    const where: any = {}
+    
+    if (eventId) {
+      where.eventId = eventId
+    }
+
+    if (search) {
+      where.participant = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { company: { contains: search, mode: 'insensitive' } },
+        ]
+      }
+    }
+
     const eventParticipants = await prisma.eventParticipant.findMany({
+      where,
       include: {
         participant: true,
         event: {

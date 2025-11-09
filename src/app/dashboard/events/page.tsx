@@ -27,7 +27,7 @@ interface Event {
   capacity: number | null
   active: boolean
   _count: {
-    participants: number
+    eventParticipants: number
   }
 }
 
@@ -190,11 +190,11 @@ export default function EventsPage() {
                   </div>
                   {event.capacity && (
                     <div className="text-slate-600">
-                      Capacidade: {event._count.participants} / {event.capacity}
+                      Capacidade: {event._count.eventParticipants} / {event.capacity}
                     </div>
                   )}
                   <div className="text-blue-600 font-medium">
-                    {event._count.participants} participante(s)
+                    {event._count.eventParticipants} participante(s)
                   </div>
                 </div>
                 <div className="flex gap-2 pt-3">
