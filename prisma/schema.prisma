@@ -108,3 +108,43 @@ model CheckIn {
   
   @@map("check_ins")
 }
+
+model Settings {
+  id        String   @id @default(cuid())
+  
+  // Identidade Visual
+  systemName     String   @default("Check-IN System")
+  logoUrl        String?
+  faviconUrl     String?
+  
+  // Cores do Tema
+  primaryColor   String   @default("#2563eb")   // blue-600
+  secondaryColor String   @default("#1e40af")   // blue-800
+  accentColor    String   @default("#3b82f6")   // blue-500
+  successColor   String   @default("#16a34a")   // green-600
+  warningColor   String   @default("#eab308")   // yellow-500
+  errorColor     String   @default("#dc2626")   // red-600
+  
+  // Template de Relatório
+  reportHeader        String?  @db.Text
+  reportFooter        String?  @db.Text
+  reportLogoUrl       String?
+  reportShowLogo      Boolean  @default(true)
+  reportShowDate      Boolean  @default(true)
+  reportShowPageNum   Boolean  @default(true)
+  
+  // Configurações de Email
+  emailFromName  String   @default("Check-IN System")
+  emailSubject   String   @default("Seu QR Code de Check-in")
+  emailTemplate  String?  @db.Text
+  
+  // Outras Configurações
+  allowSelfCheckIn      Boolean  @default(false)
+  requireDocument       Boolean  @default(false)
+  enableNotifications   Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("settings")
+}

@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Settings,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -77,12 +78,21 @@ export function Navbar() {
             )}
 
             {isAdmin && (
-              <Link href="/dashboard/users">
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Usuários
-                </Button>
-              </Link>
+              <>
+                <Link href="/dashboard/users">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Usuários
+                  </Button>
+                </Link>
+
+                <Link href="/dashboard/settings">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Configurações
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
 
@@ -172,15 +182,27 @@ export function Navbar() {
               )}
 
               {isAdmin && (
-                <Link
-                  href="/dashboard/users"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Button variant="ghost" className="w-full justify-start gap-2">
-                    <Users className="w-4 h-4" />
-                    Usuários
-                  </Button>
-                </Link>
+                <>
+                  <Link
+                    href="/dashboard/users"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Users className="w-4 h-4" />
+                      Usuários
+                    </Button>
+                  </Link>
+
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Settings className="w-4 h-4" />
+                      Configurações
+                    </Button>
+                  </Link>
+                </>
               )}
 
               <div className="pt-4 border-t border-border mt-2">
