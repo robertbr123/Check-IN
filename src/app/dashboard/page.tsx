@@ -22,9 +22,10 @@ export default function DashboardPage() {
   }, [session, router])
 
   const isAdmin = session?.user?.role === "ADMIN"
+  const isOperador = session?.user?.role === "OPERADOR"
   
   // Se for operador, não renderizar nada (está redirecionando)
-  if (session?.user?.role === "OPERADOR") {
+  if (isOperador) {
     return null
   }
   
@@ -144,7 +145,7 @@ export default function DashboardPage() {
                 </div>
               </a>
 
-              {session?.user?.role !== "OPERADOR" && (
+              {!isOperador && (
                 <>
                   <a
                     href="/dashboard/events"
@@ -195,13 +196,13 @@ export default function DashboardPage() {
                 <p className="font-medium text-slate-900 mb-1">Permissões:</p>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
                   <li>Usar scanner de QR code</li>
-                  {session?.user?.role !== "OPERADOR" && (
+                  {!isOperador && (
                     <>
                       <li>Gerenciar eventos e participantes</li>
                       <li>Visualizar relatórios</li>
                     </>
                   )}
-                  {session?.user?.role === "ADMIN" && (
+                  {isAdmin && (
                     <li>Gerenciar usuários do sistema</li>
                   )}
                 </ul>
