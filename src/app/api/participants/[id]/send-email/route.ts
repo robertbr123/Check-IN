@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma"
 import { sendQRCodeEmail } from "@/lib/email"
 import QRCode from "qrcode"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
