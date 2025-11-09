@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, QrCode, Download } from "lucide-react"
+import { Plus, Pencil, Trash2, QrCode, Download, Mail } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -170,6 +170,24 @@ export default function ParticipantsPage() {
     link.click()
   }
 
+  const handleSendEmail = async (participantId: string) => {
+    try {
+      const response = await fetch(`/api/participants/${participantId}/send-email`, {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        alert("Email enviado com sucesso!")
+      } else {
+        const error = await response.json()
+        alert(error.error || "Erro ao enviar email")
+      }
+    } catch (error) {
+      console.error("Erro ao enviar email:", error)
+      alert("Erro ao enviar email. Verifique as configurações SMTP.")
+    }
+  }
+
   const resetForm = () => {
     setEditingParticipant(null)
     setFormData({
@@ -293,6 +311,16 @@ export default function ParticipantsPage() {
                     >
                       <QrCode className="w-4 h-4" />
                       QR Code
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendEmail(participant.id)}
+                      className="gap-2"
+                      title="Enviar QR Code por email"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Email
                     </Button>
                     <Button
                       variant="outline"
@@ -454,6 +482,14 @@ export default function ParticipantsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
               Fechar
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => selectedParticipant && handleSendEmail(selectedParticipant.id)} 
+              className="gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              Enviar por Email
             </Button>
             <Button onClick={handleDownloadQRCode} className="gap-2">
               <Download className="w-4 h-4" />
