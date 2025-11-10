@@ -58,16 +58,51 @@ export async function DELETE(
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
     }
 
-    // Soft delete - apenas marca como excluído, mantém todo o histórico
-    await prisma.event.update({
-      where: { id: params.id },
-      data: {
-        deletedAt: new Date(),
-        active: false,
-      },
-    })
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get('permanent') === 'true'
 
-    return NextResponse.json({ success: true })
+    if (permanent) {
+      // Exclusão definitiva - apenas para eventos já arquivados (deletedAt != null)
+      const event = await prisma.event.findUnique({
+        where: { id: params.id },
+        select: { deletedAt: true },
+      })
+
+      if (!event) {
+        return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 })
+      }
+
+      if (!event.deletedAt) {
+        return NextResponse.json(
+          { error: "Apenas eventos arquivados podem ser excluídos definitivamente" },
+          { status: 400 }
+        )
+      }
+
+      // Exclusão física - remove do banco de dados
+      await prisma.event.delete({
+        where: { id: params.id },
+      })
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Evento excluído definitivamente" 
+      })
+    } else {
+      // Soft delete - arquivar evento
+      await prisma.event.update({
+        where: { id: params.id },
+        data: {
+          deletedAt: new Date(),
+          active: false,
+        },
+      })
+
+      return NextResponse.json({ 
+        success: true,
+        message: "Evento arquivado com sucesso"
+      })
+    }
   } catch (error) {
     console.error("Erro ao excluir evento:", error)
     return NextResponse.json(

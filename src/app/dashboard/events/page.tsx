@@ -26,16 +26,20 @@ interface Event {
   endDate: string
   capacity: number | null
   active: boolean
+  deletedAt: string | null
   _count: {
     eventParticipants: number
   }
 }
+
+type TabType = 'active' | 'archived'
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const [activeTab, setActiveTab] = useState<TabType>('active')
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -46,12 +50,22 @@ export default function EventsPage() {
   })
 
   useEffect(() => {
+    autoArchiveEvents()
     fetchEvents()
   }, [])
 
+  const autoArchiveEvents = async () => {
+    try {
+      await fetch("/api/events/archive", { method: "POST" })
+    } catch (error) {
+      console.error("Erro ao arquivar eventos automaticamente:", error)
+    }
+  }
+
   const fetchEvents = async () => {
     try {
-      const response = await fetch("/api/events")
+      // Buscar todos os eventos (incluindo arquivados)
+      const response = await fetch("/api/events?includeDeleted=true")
       if (response.ok) {
         const data = await response.json()
         setEvents(data)
@@ -62,6 +76,15 @@ export default function EventsPage() {
       setLoading(false)
     }
   }
+
+  // Filtrar eventos por tab
+  const filteredEvents = events.filter(event => {
+    if (activeTab === 'active') {
+      return !event.deletedAt
+    } else {
+      return event.deletedAt !== null
+    }
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,16 +117,49 @@ export default function EventsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este evento?")) return
+  const handleDelete = async (id: string, isArchived: boolean) => {
+    if (isArchived) {
+      // Exclusão definitiva
+      if (!confirm(
+        "⚠️ ATENÇÃO! Esta ação é IRREVERSÍVEL!\n\n" +
+        "Você está prestes a EXCLUIR DEFINITIVAMENTE este evento do banco de dados.\n" +
+        "Todos os dados de participantes, check-ins e relatórios deste evento serão PERDIDOS PERMANENTEMENTE.\n\n" +
+        "Deseja realmente continuar?"
+      )) return
 
-    try {
-      const response = await fetch(`/api/events/${id}`, { method: "DELETE" })
-      if (response.ok) {
-        fetchEvents()
+      try {
+        const response = await fetch(`/api/events/${id}?permanent=true`, { 
+          method: "DELETE" 
+        })
+        if (response.ok) {
+          alert("Evento excluído definitivamente do banco de dados")
+          fetchEvents()
+        } else {
+          const error = await response.json()
+          alert(error.error || "Erro ao excluir evento")
+        }
+      } catch (error) {
+        console.error("Erro ao excluir evento definitivamente:", error)
+        alert("Erro ao excluir evento")
       }
-    } catch (error) {
-      console.error("Erro ao excluir evento:", error)
+    } else {
+      // Arquivar evento (soft delete)
+      if (!confirm(
+        "Deseja arquivar este evento?\n\n" +
+        "O evento será movido para a aba 'Arquivados' mas todos os dados serão preservados.\n" +
+        "Você poderá acessar relatórios e dados históricos a qualquer momento."
+      )) return
+
+      try {
+        const response = await fetch(`/api/events/${id}`, { method: "DELETE" })
+        if (response.ok) {
+          alert("Evento arquivado com sucesso")
+          fetchEvents()
+        }
+      } catch (error) {
+        console.error("Erro ao arquivar evento:", error)
+        alert("Erro ao arquivar evento")
+      }
     }
   }
 
@@ -146,30 +202,73 @@ export default function EventsPage() {
         </Button>
       </div>
 
+      {/* Tabs */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-2 border-b">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`px-4 py-2 font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === 'active'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Ativos ({events.filter(e => !e.deletedAt).length})
+            </button>
+            <button
+              onClick={() => setActiveTab('archived')}
+              className={`px-4 py-2 font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === 'archived'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Arquivados ({events.filter(e => e.deletedAt).length})
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           <p className="col-span-full text-center py-12 text-slate-500">Carregando...</p>
-        ) : events.length === 0 ? (
+        ) : filteredEvents.length === 0 ? (
           <Card className="col-span-full">
             <CardContent className="text-center py-12">
               <Calendar className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-              <p className="text-slate-500 mb-4">Nenhum evento cadastrado</p>
-              <Button onClick={() => setDialogOpen(true)}>Criar Primeiro Evento</Button>
+              <p className="text-slate-500 mb-4">
+                {activeTab === 'active' 
+                  ? 'Nenhum evento ativo' 
+                  : 'Nenhum evento arquivado'}
+              </p>
+              {activeTab === 'active' && (
+                <Button onClick={() => setDialogOpen(true)}>Criar Primeiro Evento</Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          events.map((event) => (
+          filteredEvents.map((event) => (
             <Card key={event.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{event.name}</CardTitle>
-                    {event.active ? (
-                      <Badge className="mt-2" variant="success">Ativo</Badge>
-                    ) : (
-                      <Badge className="mt-2" variant="secondary">Inativo</Badge>
-                    )}
+                    <div className="flex gap-2 mt-2">
+                      {event.deletedAt ? (
+                        <Badge variant="secondary">📦 Arquivado</Badge>
+                      ) : event.active ? (
+                        <Badge variant="success">✓ Ativo</Badge>
+                      ) : (
+                        <Badge variant="secondary">Inativo</Badge>
+                      )}
+                      {event.deletedAt && (
+                        <Badge variant="outline" className="text-xs text-slate-500">
+                          {new Date(event.deletedAt).toLocaleDateString("pt-BR")}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -198,21 +297,26 @@ export default function EventsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 pt-3">
+                  {!event.deletedAt && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEdit(event)}
+                    >
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(event)}
-                  >
-                    <Pencil className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(event.id)}
+                    onClick={() => handleDelete(event.id, !!event.deletedAt)}
+                    className={event.deletedAt ? "flex-1" : ""}
+                    title={event.deletedAt ? "Excluir definitivamente" : "Arquivar evento"}
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
+                    {event.deletedAt && <span className="ml-2 text-red-600">Excluir Definitivamente</span>}
                   </Button>
                 </div>
               </CardContent>
