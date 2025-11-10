@@ -78,13 +78,21 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, email, phone, document, company, position, eventId } = body
 
-    // 1. Buscar ou criar participante
+    // Validar CPF obrigatório
+    if (!document) {
+      return NextResponse.json(
+        { error: "CPF/Documento é obrigatório" },
+        { status: 400 }
+      )
+    }
+
+    // 1. Buscar ou criar participante usando CPF como identificador único
     const participant = await prisma.participant.upsert({
-      where: { email },
+      where: { document },
       update: {
         name,
+        email,
         phone,
-        document,
         company,
         position,
       },
@@ -139,8 +147,9 @@ export async function POST(request: Request) {
     return NextResponse.json(eventParticipant)
   } catch (error) {
     console.error("Erro ao criar participante:", error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
-      { error: "Erro ao criar participante" },
+      { error: "Erro ao criar participante", details: errorMessage },
       { status: 500 }
     )
   }

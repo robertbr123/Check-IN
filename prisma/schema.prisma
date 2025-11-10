@@ -60,9 +60,9 @@ model Event {
 model Participant {
   id        String   @id @default(cuid())
   name      String
-  email     String   @unique
+  email     String
   phone     String?
-  document  String?
+  document  String   @unique // CPF único e obrigatório
   company   String?
   position  String?
   photoUrl  String?
