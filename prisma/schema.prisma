@@ -85,7 +85,7 @@ model EventParticipant {
   updatedAt     DateTime @updatedAt
   
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
-  event       Event       @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   checkIns    CheckIn[]
   
   @@unique([participantId, eventId])
@@ -103,8 +103,8 @@ model CheckIn {
   location             String?
   notes                String?
   
-  eventParticipant EventParticipant @relation(fields: [eventParticipantId], references: [id], onDelete: Restrict)
-  event            Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  eventParticipant EventParticipant @relation(fields: [eventParticipantId], references: [id], onDelete: Cascade)
+  event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   
   @@map("check_ins")
 }
