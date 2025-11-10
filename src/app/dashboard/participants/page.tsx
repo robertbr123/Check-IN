@@ -209,12 +209,17 @@ export default function ParticipantsPage() {
         systemName = settings.systemName || "Check-IN"
       }
 
-      // Formatar número de telefone (remover caracteres especiais)
-      const phone = participant.participant.phone?.replace(/\D/g, "") || ""
+      // Formatar número de telefone (remover caracteres especiais e adicionar DDI 55)
+      let phone = participant.participant.phone?.replace(/\D/g, "") || ""
       
       if (!phone) {
         alert("Este participante não possui telefone cadastrado.")
         return
+      }
+
+      // Adicionar DDI 55 do Brasil se não tiver
+      if (!phone.startsWith("55")) {
+        phone = "55" + phone
       }
 
       // Formatar data do evento
@@ -234,18 +239,17 @@ export default function ParticipantsPage() {
         }
       }
 
-      // Criar mensagem personalizada
-      const message = `Olá *${participant.participant.name}*! 👋\n\n` +
-        `Você está confirmado(a) para o evento:\n` +
-        `📅 *${participant.event.name}*\n` +
-        (eventDate ? `🕒 ${eventDate}\n\n` : '\n') +
-        `✅ Para fazer check-in no evento, apresente seu QR Code na entrada.\n\n` +
+      // Criar mensagem personalizada (sem emojis, apenas texto)
+      const message = `Ola *${participant.participant.name}*!\n\n` +
+        `Voce esta confirmado(a) para o evento:\n` +
+        `*${participant.event.name}*\n` +
+        (eventDate ? `Data: ${eventDate}\n\n` : '\n') +
+        `Para fazer check-in no evento, apresente seu QR Code na entrada.\n\n` +
         `Acesse o link abaixo para visualizar e baixar seu QR Code:\n` +
         `${window.location.origin}/qrcode/${participant.qrCode}\n\n` +
         `_Mensagem enviada pelo sistema ${systemName}_`
 
       // Abrir WhatsApp Web com a mensagem
-      // Formato internacional: 55 (Brasil) + DDD + Número
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
       
       window.open(whatsappUrl, "_blank")
