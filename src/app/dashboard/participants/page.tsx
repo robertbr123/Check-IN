@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search } from "lucide-react"
+import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search, MessageCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -199,6 +199,62 @@ export default function ParticipantsPage() {
     }
   }
 
+  const handleSendWhatsApp = async (participant: Participant) => {
+    try {
+      // Buscar configurações do sistema
+      const settingsResponse = await fetch("/api/settings")
+      let systemName = "Check-IN"
+      if (settingsResponse.ok) {
+        const settings = await settingsResponse.json()
+        systemName = settings.systemName || "Check-IN"
+      }
+
+      // Formatar número de telefone (remover caracteres especiais)
+      const phone = participant.participant.phone?.replace(/\D/g, "") || ""
+      
+      if (!phone) {
+        alert("Este participante não possui telefone cadastrado.")
+        return
+      }
+
+      // Formatar data do evento
+      const eventResponse = await fetch(`/api/events`)
+      let eventDate = ""
+      if (eventResponse.ok) {
+        const events = await eventResponse.json()
+        const event = events.find((e: any) => e.id === participant.eventId)
+        if (event?.startDate) {
+          eventDate = new Date(event.startDate).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        }
+      }
+
+      // Criar mensagem personalizada
+      const message = `Olá *${participant.participant.name}*! 👋\n\n` +
+        `Você está confirmado(a) para o evento:\n` +
+        `📅 *${participant.event.name}*\n` +
+        (eventDate ? `🕒 ${eventDate}\n\n` : '\n') +
+        `✅ Para fazer check-in no evento, apresente seu QR Code na entrada.\n\n` +
+        `Acesse o link abaixo para visualizar e baixar seu QR Code:\n` +
+        `${window.location.origin}/qrcode/${participant.qrCode}\n\n` +
+        `_Mensagem enviada pelo sistema ${systemName}_`
+
+      // Abrir WhatsApp Web com a mensagem
+      // Formato internacional: 55 (Brasil) + DDD + Número
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+      
+      window.open(whatsappUrl, "_blank")
+    } catch (error) {
+      console.error("Erro ao preparar mensagem WhatsApp:", error)
+      alert("Erro ao abrir WhatsApp")
+    }
+  }
+
   const resetForm = () => {
     setEditingParticipant(null)
     setFormData({
@@ -378,7 +434,7 @@ export default function ParticipantsPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -387,6 +443,17 @@ export default function ParticipantsPage() {
                     >
                       <QrCode className="w-4 h-4" />
                       QR Code
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendWhatsApp(participant)}
+                      className="gap-2 text-green-600 hover:text-green-700 hover:border-green-600"
+                      title="Enviar informações por WhatsApp"
+                      disabled={!participant.participant.phone}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      WhatsApp
                     </Button>
                     <Button
                       variant="outline"
@@ -561,15 +628,25 @@ export default function ParticipantsPage() {
             </Button>
             <Button 
               variant="outline" 
+              onClick={() => selectedParticipant && handleSendWhatsApp(selectedParticipant)} 
+              className="gap-2 text-green-600 hover:text-green-700 hover:border-green-600"
+              disabled={!selectedParticipant?.participant.phone}
+              title="Enviar por WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={() => selectedParticipant && handleSendEmail(selectedParticipant.id)} 
               className="gap-2"
             >
               <Mail className="w-4 h-4" />
-              Enviar por Email
+              Email
             </Button>
             <Button onClick={handleDownloadQRCode} className="gap-2">
               <Download className="w-4 h-4" />
-              Baixar QR Code
+              Baixar
             </Button>
           </DialogFooter>
         </DialogContent>
