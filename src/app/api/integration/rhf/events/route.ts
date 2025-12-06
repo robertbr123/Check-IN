@@ -65,7 +65,9 @@ export async function GET(request: Request) {
     const eventParticipants = await prisma.eventParticipant.findMany({
       where: {
         participantId: participant.id,
-        cancelled: false,
+        status: {
+          not: "CANCELLED"
+        },
         event: {
           deletedAt: null,
           // Apenas eventos futuros ou em andamento
