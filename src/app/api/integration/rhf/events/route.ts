@@ -1,9 +1,27 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import QRCode from 'qrcode'
-import { formatDateTime } from "@/lib/utils"
 
 export const dynamic = 'force-dynamic'
+
+// Função para adicionar 5 horas e formatar data/hora para RHF
+function formatDateTimeRHF(date: Date): string {
+  const d = new Date(date)
+  d.setHours(d.getHours() + 5)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${day}/${month}/${year}, ${hours}:${minutes}`
+}
+
+// Função para adicionar 5 horas a uma data (retorna ISO string)
+function addFiveHours(date: Date): string {
+  const d = new Date(date)
+  d.setHours(d.getHours() + 5)
+  return d.toISOString()
+}
 
 // Chave de API para integração (configurável via env)
 const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || ''
@@ -117,10 +135,10 @@ export async function GET(request: Request) {
           eventName: ep.event.name,
           eventDescription: ep.event.description,
           eventLocation: ep.event.location,
-          eventStartDate: ep.event.startDate,
-          eventEndDate: ep.event.endDate,
-          eventStartDateFormatted: formatDateTime(ep.event.startDate),
-          eventEndDateFormatted: formatDateTime(ep.event.endDate),
+          eventStartDate: addFiveHours(ep.event.startDate),
+          eventEndDate: addFiveHours(ep.event.endDate),
+          eventStartDateFormatted: formatDateTimeRHF(ep.event.startDate),
+          eventEndDateFormatted: formatDateTimeRHF(ep.event.endDate),
           qrCode: ep.qrCode,
           qrCodeImage: qrCodeImage,
           registeredAt: ep.registeredAt,
