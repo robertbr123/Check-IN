@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Download, Calendar, MapPin, Clock } from "lucide-react"
+import { formatDateTimeLong } from "@/lib/utils"
 
 interface ParticipantData {
   participant: {
@@ -63,14 +64,7 @@ export default function PublicQRCodePage() {
   }
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Rio_Branco",
-    })
+    return formatDateTimeLong(date)
   }
 
   if (loading) {

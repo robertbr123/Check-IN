@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer"
 import { prisma } from "./prisma"
+import { formatDateTimeLong } from "@/lib/utils"
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -37,14 +38,7 @@ export async function sendQRCodeEmail({
   const logoUrl = settings?.logoUrl || null
   
   const formattedDate = eventDate
-    ? new Date(eventDate).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "America/Rio_Branco",
-      })
+    ? formatDateTimeLong(eventDate)
     : "A definir"
 
   // Converte Data URL para Buffer

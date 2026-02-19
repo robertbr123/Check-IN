@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ImportCSV from "@/components/ImportCSV"
+import { formatDateTimeLong, formatDate } from "@/lib/utils"
 
 interface UniqueParticipant {
   id: string
@@ -262,15 +263,8 @@ export default function ParticipantsPage() {
         phone = "55" + phone
       }
 
-      // Formatar data do evento
-      const eventDate = new Date(eventParticipant.event.startDate).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "America/Rio_Branco",
-      })
+      // Formatar data do evento usando função centralizada
+      const eventDate = formatDateTimeLong(eventParticipant.event.startDate)
 
       // Criar mensagem personalizada (sem emojis, apenas texto)
       const message = `Ola *${participant.name}*!\n\n` +
@@ -590,7 +584,7 @@ export default function ParticipantsPage() {
                                   <Badge variant="secondary" className="text-xs">Arquivado</Badge>
                                 )}
                                 <span className="text-xs text-slate-500">
-                                  {new Date(ep.event.startDate).toLocaleDateString("pt-BR", { timeZone: "America/Rio_Branco" })}
+                                  {formatDate(ep.event.startDate)}
                                 </span>
                               </div>
                               {ep.event.location && (
@@ -847,7 +841,7 @@ export default function ParticipantsPage() {
                           )}
                         </div>
                         <p className="text-sm text-slate-500">
-                          {new Date(ep.event.startDate).toLocaleDateString("pt-BR", { timeZone: "America/Rio_Branco" })} - {ep.event.location}
+                          {formatDate(ep.event.startDate)} - {ep.event.location}
                         </p>
                       </div>
                       <Button

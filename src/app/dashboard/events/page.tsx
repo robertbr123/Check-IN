@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { formatDateTime } from "@/lib/utils"
+import { formatDateTime, formatDate } from "@/lib/utils"
 
 interface Event {
   id: string
@@ -163,14 +163,27 @@ export default function EventsPage() {
     }
   }
 
+  // Função para converter Date para string no formato datetime-local
+  // O banco já armazena o horário correto, então usamos UTC diretamente
+  const toLocalDateTimeString = (date: Date | string): string => {
+    const d = new Date(date)
+    // Usar valores UTC diretamente já que o banco armazena corretamente
+    const year = d.getUTCFullYear()
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    const hours = String(d.getUTCHours()).padStart(2, '0')
+    const minutes = String(d.getUTCMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
   const handleEdit = (event: Event) => {
     setEditingEvent(event)
     setFormData({
       name: event.name,
       description: event.description || "",
       location: event.location,
-      startDate: new Date(event.startDate).toISOString().slice(0, 16),
-      endDate: new Date(event.endDate).toISOString().slice(0, 16),
+      startDate: toLocalDateTimeString(event.startDate),
+      endDate: toLocalDateTimeString(event.endDate),
       capacity: event.capacity?.toString() || "",
     })
     setDialogOpen(true)
@@ -265,7 +278,7 @@ export default function EventsPage() {
                       )}
                       {event.deletedAt && (
                         <Badge variant="outline" className="text-xs text-slate-500">
-                          {new Date(event.deletedAt).toLocaleDateString("pt-BR", { timeZone: "America/Rio_Branco" })}
+                          {formatDate(event.deletedAt)}
                         </Badge>
                       )}
                     </div>

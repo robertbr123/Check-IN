@@ -17,6 +17,7 @@ import { Download, FileSpreadsheet, Users, UserCheck, Clock, FileText } from "lu
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import { formatDateTime } from "@/lib/utils"
 
 interface Event {
   id: string
@@ -118,9 +119,9 @@ export default function ReportsPage() {
         Email: item.participant.email,
         Telefone: item.participant.phone || "-",
         Empresa: item.participant.company || "-",
-        "Check-in": new Date(checkIn.checkInTime).toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" }),
+        "Check-in": formatDateTime(checkIn.checkInTime),
         "Check-out": checkIn.checkOutTime
-          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" })
+          ? formatDateTime(checkIn.checkOutTime)
           : "-",
         Status: checkIn.status === "CHECKED_IN" ? "Presente" : "Saiu",
       }))
@@ -238,7 +239,7 @@ export default function ReportsPage() {
     // Data de geração
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
-    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" })}`, 15, yPosition)
+    doc.text(`Gerado em: ${formatDateTime(new Date().toISOString())}`, 15, yPosition)
 
     yPosition += 10
 
@@ -320,21 +321,9 @@ export default function ReportsPage() {
         item.participant.email,
         item.participant.phone || "-",
         item.participant.company || "-",
-        new Date(checkIn.checkInTime).toLocaleString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "America/Rio_Branco",
-        }),
+        formatDateTime(checkIn.checkInTime),
         checkIn.checkOutTime
-          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "America/Rio_Branco",
-            })
+          ? formatDateTime(checkIn.checkOutTime)
           : "-",
         checkIn.status === "CHECKED_IN" ? "Presente" : "Saiu",
       ])
@@ -396,17 +385,6 @@ export default function ReportsPage() {
 
     // Salva o PDF
     doc.save(`relatorio-${eventName.replace(/\s/g, "-")}.pdf`)
-  }
-
-  const formatDateTime = (date: string) => {
-    return new Date(date).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Rio_Branco",
-    })
   }
 
   return (

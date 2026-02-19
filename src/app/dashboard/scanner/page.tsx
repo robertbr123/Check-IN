@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { QrCode, Camera, CheckCircle2, XCircle, User, Calendar, Clock, Maximize, Minimize } from "lucide-react"
 import { Html5Qrcode } from "html5-qrcode"
+import { formatDateTime } from "@/lib/utils"
 
 interface ScanResult {
   success: boolean
@@ -286,7 +287,7 @@ export default function ScannerPage() {
                             </Badge>
                             <span className="text-sm text-slate-600">
                               <Clock className="w-4 h-4 inline mr-1" />
-                              {new Date(result.checkIn.time).toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" })}
+                              {formatDateTime(result.checkIn.time)}
                             </span>
                           </div>
                         )}

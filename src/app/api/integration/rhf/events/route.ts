@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import QRCode from 'qrcode'
+import { formatDateTime } from "@/lib/utils"
 
 export const dynamic = 'force-dynamic'
 
@@ -98,18 +99,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // Função para formatar data no timezone de Rio Branco/Acre
-    const formatDateTimeBR = (date: Date): string => {
-      return date.toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'America/Rio_Branco',
-      })
-    }
-
     // Gerar QR codes como imagem base64
     const eventsWithQR = await Promise.all(
       eventParticipants.map(async (ep) => {
@@ -130,8 +119,8 @@ export async function GET(request: Request) {
           eventLocation: ep.event.location,
           eventStartDate: ep.event.startDate,
           eventEndDate: ep.event.endDate,
-          eventStartDateFormatted: formatDateTimeBR(ep.event.startDate),
-          eventEndDateFormatted: formatDateTimeBR(ep.event.endDate),
+          eventStartDateFormatted: formatDateTime(ep.event.startDate),
+          eventEndDateFormatted: formatDateTime(ep.event.endDate),
           qrCode: ep.qrCode,
           qrCodeImage: qrCodeImage,
           registeredAt: ep.registeredAt,
