@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Upload, Download, CheckCircle2, XCircle, FileSpreadsheet } from "lucide-react"
@@ -26,6 +26,11 @@ export default function ImportCSV({ eventId, onImportComplete }: ImportCSVProps)
     success: number
     errors: { row: number; error: string }[]
   } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleSelectFile = () => {
+    fileInputRef.current?.click()
+  }
 
   const downloadTemplate = () => {
     const template = `nome,email,telefone,documento,empresa,cargo
@@ -155,25 +160,21 @@ Maria Santos,maria@empresa.com,(11) 98888-8888,987.654.321-00,Digital Inc,Design
 
           <div className="flex-1">
             <input
+              ref={fileInputRef}
               type="file"
               accept=".csv"
               onChange={handleFileUpload}
               disabled={importing || !eventId}
               className="hidden"
-              id="csv-upload"
             />
-            <label htmlFor="csv-upload" className="cursor-pointer">
-              <Button
-                asChild
-                disabled={importing || !eventId}
-                className="gap-2 w-full"
-              >
-                <span>
-                  <Upload className="w-4 h-4" />
-                  {importing ? "Importando..." : "Selecionar Arquivo CSV"}
-                </span>
-              </Button>
-            </label>
+            <Button
+              onClick={handleSelectFile}
+              disabled={importing || !eventId}
+              className="gap-2 w-full"
+            >
+              <Upload className="w-4 h-4" />
+              {importing ? "Importando..." : "Selecionar Arquivo CSV"}
+            </Button>
           </div>
         </div>
 
