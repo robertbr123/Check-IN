@@ -57,6 +57,18 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, description, location, startDate, endDate, capacity } = body
 
+    // Função para converter datetime-local para Date preservando o horário
+    // O input datetime-local envia "2026-02-19T16:00" sem timezone
+    // Adicionamos o offset de Brasília (-03:00) para garantir que 16:00 seja salvo como 16:00
+    const parseLocalDateTime = (dateTimeStr: string): Date => {
+      // Se já tem timezone, usa direto
+      if (dateTimeStr.includes('Z') || dateTimeStr.includes('+') || dateTimeStr.includes('-', 10)) {
+        return new Date(dateTimeStr)
+      }
+      // Adiciona timezone de Brasília (UTC-3)
+      return new Date(dateTimeStr + '-03:00')
+    }
+
     console.log("Criando evento com dados:", { name, location, startDate, endDate, capacity, createdBy: session.user.id })
 
     const event = await prisma.event.create({
@@ -64,8 +76,8 @@ export async function POST(request: Request) {
         name,
         description,
         location,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: parseLocalDateTime(startDate),
+        endDate: parseLocalDateTime(endDate),
         capacity,
         createdBy: session.user.id,
       },
