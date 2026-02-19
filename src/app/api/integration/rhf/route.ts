@@ -90,6 +90,9 @@ export async function POST(request: Request) {
 
     const employee = await response.json()
 
+    // Limpar CPF (remover pontos e traços)
+    const cleanCpf = employee.cpf?.replace(/\D/g, '') || ''
+
     // Verificar se o evento existe
     const event = await prisma.event.findUnique({
       where: { id: eventId }
@@ -104,7 +107,7 @@ export async function POST(request: Request) {
 
     // Criar ou atualizar participante usando CPF como identificador
     const participant = await prisma.participant.upsert({
-      where: { document: employee.cpf },
+      where: { document: cleanCpf },
       update: {
         name: employee.name,
         email: employee.email || '',
@@ -116,7 +119,7 @@ export async function POST(request: Request) {
         name: employee.name,
         email: employee.email || '',
         phone: employee.phone || '',
-        document: employee.cpf,
+        document: cleanCpf,
         company: employee.department || '',
         position: employee.position || '',
       }

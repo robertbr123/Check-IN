@@ -20,6 +20,9 @@ export async function PUT(
     const body = await request.json()
     const { name, email, phone, document, company, position } = body
 
+    // Limpar CPF (remover pontos e traços)
+    const cleanDocument = document?.replace(/\D/g, '') || ''
+
     // Atualiza o participante
     const participant = await prisma.participant.update({
       where: { id: params.id },
@@ -27,7 +30,7 @@ export async function PUT(
         name,
         email,
         phone,
-        document,
+        document: cleanDocument,
         company,
         position,
       },

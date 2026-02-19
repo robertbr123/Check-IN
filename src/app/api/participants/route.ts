@@ -86,9 +86,12 @@ export async function POST(request: Request) {
       )
     }
 
+    // Limpar CPF (remover pontos e traços)
+    const cleanDocument = document.replace(/\D/g, '')
+
     // 1. Buscar ou criar participante usando CPF como identificador único
     const participant = await prisma.participant.upsert({
-      where: { document },
+      where: { document: cleanDocument },
       update: {
         name,
         email,
@@ -100,7 +103,7 @@ export async function POST(request: Request) {
         name,
         email,
         phone,
-        document,
+        document: cleanDocument,
         company,
         position,
       },

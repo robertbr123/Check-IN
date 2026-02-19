@@ -49,10 +49,18 @@ export async function GET(request: Request) {
     // Limpar CPF (remover pontos e traços)
     const cleanCpf = cpf.replace(/\D/g, '')
 
-    // Buscar participante pelo CPF
-    const participant = await prisma.participant.findUnique({
+    // Buscar participante pelo CPF (tenta com e sem máscara)
+    let participant = await prisma.participant.findUnique({
       where: { document: cleanCpf }
     })
+
+    // Se não encontrar, tenta buscar com máscara (para dados antigos)
+    if (!participant) {
+      const maskedCpf = cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+      participant = await prisma.participant.findUnique({
+        where: { document: maskedCpf }
+      })
+    }
 
     if (!participant) {
       return NextResponse.json({
@@ -128,7 +136,7 @@ export async function GET(request: Request) {
         id: participant.id,
         name: participant.name,
         email: participant.email,
-        document: participant.document
+        document: participant.document?.replace(/\D/g, '') || ''
       },
       events: eventsWithQR
     })

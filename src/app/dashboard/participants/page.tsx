@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search, MessageCircle, Calendar, X } from "lucide-react"
+import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search, MessageCircle, Calendar, X, Users, CheckSquare, Square } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -61,6 +61,11 @@ export default function ParticipantsPage() {
   const [selectedQRCode, setSelectedQRCode] = useState<string>("")
   const [selectedEventForImport, setSelectedEventForImport] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState<string>("")
+  // Estados para seleção em massa
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<Set<string>>(new Set())
+  const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false)
+  const [batchEventId, setBatchEventId] = useState<string>("")
+  const [batchAdding, setBatchAdding] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -299,6 +304,60 @@ export default function ParticipantsPage() {
     })
   }
 
+  // Funções de seleção em massa
+  const toggleParticipantSelection = (participantId: string) => {
+    setSelectedParticipantIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(participantId)) {
+        newSet.delete(participantId)
+      } else {
+        newSet.add(participantId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedParticipantIds.size === participants.length) {
+      setSelectedParticipantIds(new Set())
+    } else {
+      setSelectedParticipantIds(new Set(participants.map(p => p.id)))
+    }
+  }
+
+  const handleBatchAddToEvent = async () => {
+    if (!batchEventId || selectedParticipantIds.size === 0) return
+
+    setBatchAdding(true)
+    try {
+      const response = await fetch("/api/participants/batch-add-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantIds: Array.from(selectedParticipantIds),
+          eventId: batchEventId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(result.message)
+        setBatchAddDialogOpen(false)
+        setBatchEventId("")
+        setSelectedParticipantIds(new Set())
+        fetchParticipants()
+      } else {
+        alert(result.error || "Erro ao adicionar participantes")
+      }
+    } catch (error) {
+      console.error("Erro ao adicionar em massa:", error)
+      alert("Erro ao adicionar participantes ao evento")
+    } finally {
+      setBatchAdding(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -390,10 +449,50 @@ export default function ParticipantsPage() {
       {/* Participants List */}
       <Card>
         <CardHeader>
-          <CardTitle>Participantes Cadastrados</CardTitle>
-          <CardDescription>
-            {participants.length} participante(s) único(s) cadastrado(s)
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Participantes Cadastrados</CardTitle>
+              <CardDescription>
+                {participants.length} participante(s) único(s) cadastrado(s)
+                {selectedParticipantIds.size > 0 && (
+                  <span className="ml-2 text-blue-600 font-medium">
+                    • {selectedParticipantIds.size} selecionado(s)
+                  </span>
+                )}
+              </CardDescription>
+            </div>
+            {participants.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                  className="gap-2"
+                >
+                  {selectedParticipantIds.size === participants.length ? (
+                    <>
+                      <CheckSquare className="w-4 h-4" />
+                      Desmarcar Todos
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-4 h-4" />
+                      Selecionar Todos
+                    </>
+                  )}
+                </Button>
+                {selectedParticipantIds.size > 0 && (
+                  <Button
+                    onClick={() => setBatchAddDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    Adicionar ao Evento
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -411,22 +510,40 @@ export default function ParticipantsPage() {
               {participants.map((participant) => (
                 <div
                   key={participant.id}
-                  className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50"
+                  className={`border rounded-lg p-4 hover:bg-slate-50 transition-colors ${
+                    selectedParticipantIds.has(participant.id)
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-slate-200"
+                  }`}
                 >
                   {/* Informações do Participante */}
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 flex-wrap mb-2">
-                        <h3 className="font-bold text-lg text-slate-900">{participant.name}</h3>
-                        {participant.company && (
-                          <Badge variant="secondary">{participant.company}</Badge>
+                    <div className="flex items-start gap-3 flex-1">
+                      {/* Checkbox de seleção */}
+                      <button
+                        onClick={() => toggleParticipantSelection(participant.id)}
+                        className="mt-1 p-1 hover:bg-slate-200 rounded transition-colors"
+                        title={selectedParticipantIds.has(participant.id) ? "Desmarcar" : "Selecionar"}
+                      >
+                        {selectedParticipantIds.has(participant.id) ? (
+                          <CheckSquare className="w-5 h-5 text-blue-600" />
+                        ) : (
+                          <Square className="w-5 h-5 text-slate-400" />
                         )}
-                      </div>
-                      <div className="text-sm text-slate-600 space-y-1">
-                        <p>📧 {participant.email}</p>
-                        {participant.phone && <p>📱 {participant.phone}</p>}
-                        {participant.document && <p>🆔 CPF: {participant.document}</p>}
-                        {participant.position && <p>💼 {participant.position}</p>}
+                      </button>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 flex-wrap mb-2">
+                          <h3 className="font-bold text-lg text-slate-900">{participant.name}</h3>
+                          {participant.company && (
+                            <Badge variant="secondary">{participant.company}</Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-slate-600 space-y-1">
+                          <p>📧 {participant.email}</p>
+                          {participant.phone && <p>📱 {participant.phone}</p>}
+                          {participant.document && <p>🆔 CPF: {participant.document}</p>}
+                          {participant.position && <p>💼 {participant.position}</p>}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -753,6 +870,62 @@ export default function ParticipantsPage() {
           <DialogFooter>
             <Button onClick={() => setEventsDialogOpen(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Add to Event Dialog */}
+      <Dialog open={batchAddDialogOpen} onOpenChange={setBatchAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Participantes ao Evento</DialogTitle>
+            <DialogDescription>
+              Adicionar {selectedParticipantIds.size} participante(s) selecionado(s) a um evento
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="batchEvent" className="mb-2 block">
+                Selecione o evento
+              </Label>
+              <Select value={batchEventId} onValueChange={setBatchEventId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um evento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Atenção:</strong> Participantes que já estiverem cadastrados no evento selecionado serão ignorados automaticamente.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBatchAddDialogOpen(false)
+                setBatchEventId("")
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleBatchAddToEvent}
+              disabled={!batchEventId || batchAdding}
+              className="gap-2"
+            >
+              <Users className="w-4 h-4" />
+              {batchAdding ? "Adicionando..." : "Adicionar ao Evento"}
             </Button>
           </DialogFooter>
         </DialogContent>
