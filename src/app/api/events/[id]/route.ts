@@ -20,12 +20,12 @@ export async function PUT(
     const body = await request.json()
     const { name, description, location, startDate, endDate, capacity } = body
 
-    // Função para converter datetime-local para Date preservando o horário
+    // Função para converter datetime-local para Date preservando o horário (Rio Branco/Acre UTC-5)
     const parseLocalDateTime = (dateTimeStr: string): Date => {
       if (dateTimeStr.includes('Z') || dateTimeStr.includes('+') || dateTimeStr.includes('-', 10)) {
         return new Date(dateTimeStr)
       }
-      return new Date(dateTimeStr + '-03:00')
+      return new Date(dateTimeStr + '-05:00')
     }
 
     const event = await prisma.event.update({

@@ -265,7 +265,7 @@ export default function EventsPage() {
                       )}
                       {event.deletedAt && (
                         <Badge variant="outline" className="text-xs text-slate-500">
-                          {new Date(event.deletedAt).toLocaleDateString("pt-BR")}
+                          {new Date(event.deletedAt).toLocaleDateString("pt-BR", { timeZone: "America/Rio_Branco" })}
                         </Badge>
                       )}
                     </div>

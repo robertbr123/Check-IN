@@ -269,6 +269,7 @@ export default function ParticipantsPage() {
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "America/Rio_Branco",
       })
 
       // Criar mensagem personalizada (sem emojis, apenas texto)
@@ -589,7 +590,7 @@ export default function ParticipantsPage() {
                                   <Badge variant="secondary" className="text-xs">Arquivado</Badge>
                                 )}
                                 <span className="text-xs text-slate-500">
-                                  {new Date(ep.event.startDate).toLocaleDateString("pt-BR")}
+                                  {new Date(ep.event.startDate).toLocaleDateString("pt-BR", { timeZone: "America/Rio_Branco" })}
                                 </span>
                               </div>
                               {ep.event.location && (
@@ -846,7 +847,7 @@ export default function ParticipantsPage() {
                           )}
                         </div>
                         <p className="text-sm text-slate-500">
-                          {new Date(ep.event.startDate).toLocaleDateString("pt-BR")} - {ep.event.location}
+                          {new Date(ep.event.startDate).toLocaleDateString("pt-BR", { timeZone: "America/Rio_Branco" })} - {ep.event.location}
                         </p>
                       </div>
                       <Button

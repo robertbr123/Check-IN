@@ -286,7 +286,7 @@ export default function ScannerPage() {
                             </Badge>
                             <span className="text-sm text-slate-600">
                               <Clock className="w-4 h-4 inline mr-1" />
-                              {new Date(result.checkIn.time).toLocaleString("pt-BR")}
+                              {new Date(result.checkIn.time).toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" })}
                             </span>
                           </div>
                         )}

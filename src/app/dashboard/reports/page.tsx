@@ -118,9 +118,9 @@ export default function ReportsPage() {
         Email: item.participant.email,
         Telefone: item.participant.phone || "-",
         Empresa: item.participant.company || "-",
-        "Check-in": new Date(checkIn.checkInTime).toLocaleString("pt-BR"),
+        "Check-in": new Date(checkIn.checkInTime).toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" }),
         "Check-out": checkIn.checkOutTime
-          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR")
+          ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" })
           : "-",
         Status: checkIn.status === "CHECKED_IN" ? "Presente" : "Saiu",
       }))
@@ -238,7 +238,7 @@ export default function ReportsPage() {
     // Data de geração
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
-    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 15, yPosition)
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Rio_Branco" })}`, 15, yPosition)
 
     yPosition += 10
 
@@ -325,6 +325,7 @@ export default function ReportsPage() {
           month: "2-digit",
           hour: "2-digit",
           minute: "2-digit",
+          timeZone: "America/Rio_Branco",
         }),
         checkIn.checkOutTime
           ? new Date(checkIn.checkOutTime).toLocaleString("pt-BR", {
@@ -332,6 +333,7 @@ export default function ReportsPage() {
               month: "2-digit",
               hour: "2-digit",
               minute: "2-digit",
+              timeZone: "America/Rio_Branco",
             })
           : "-",
         checkIn.status === "CHECKED_IN" ? "Presente" : "Saiu",
@@ -403,6 +405,7 @@ export default function ReportsPage() {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "America/Rio_Branco",
     })
   }
 

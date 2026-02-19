@@ -11,7 +11,7 @@ export function formatDate(date: Date | string): string {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-    timeZone: 'America/Sao_Paulo',
+    timeZone: 'America/Rio_Branco',
   })
 }
 
@@ -23,7 +23,7 @@ export function formatDateTime(date: Date | string): string {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Sao_Paulo',
+    timeZone: 'America/Rio_Branco',
   })
 }
 
