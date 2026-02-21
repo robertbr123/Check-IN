@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Download, FileSpreadsheet, Users, UserCheck, Clock, FileText } from "lucide-react"
+import { Download, FileSpreadsheet, Users, UserCheck, Clock, FileText, Filter, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
@@ -55,6 +56,10 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(false)
+  
+  // Filtros
+  const [companyFilter, setCompanyFilter] = useState<string>("all")
+  const [participantFilter, setParticipantFilter] = useState<string>("all")
 
   useEffect(() => {
     fetchEvents()
@@ -63,8 +68,79 @@ export default function ReportsPage() {
   useEffect(() => {
     if (selectedEvent) {
       fetchReport()
+      // Limpar filtros ao trocar de evento
+      setCompanyFilter("all")
+      setParticipantFilter("all")
     }
   }, [selectedEvent])
+
+  // Lista de empresas únicas
+  const uniqueCompanies = useMemo(() => {
+    const companies = reportData
+      .map((item) => item.participant.company)
+      .filter((company): company is string => !!company)
+    return [...new Set(companies)].sort()
+  }, [reportData])
+
+  // Lista de participantes (filtrada por empresa se selecionada)
+  const filteredParticipants = useMemo(() => {
+    let participants = reportData
+    if (companyFilter !== "all") {
+      participants = participants.filter(
+        (item) => item.participant.company === companyFilter
+      )
+    }
+    return participants.map((item) => ({
+      name: item.participant.name,
+      email: item.participant.email,
+    })).sort((a, b) => a.name.localeCompare(b.name))
+  }, [reportData, companyFilter])
+
+  // Dados filtrados
+  const filteredData = useMemo(() => {
+    let data = reportData
+    
+    if (companyFilter !== "all") {
+      data = data.filter((item) => item.participant.company === companyFilter)
+    }
+    
+    if (participantFilter !== "all") {
+      data = data.filter((item) => item.participant.email === participantFilter)
+    }
+    
+    return data
+  }, [reportData, companyFilter, participantFilter])
+
+  // Estatísticas filtradas
+  const filteredStats = useMemo(() => {
+    if (!stats || filteredData.length === 0) return null
+    
+    const totalParticipants = filteredData.length
+    const participantsWithCheckIn = filteredData.filter(
+      (item) => item.checkIns.length > 0
+    ).length
+    const checkedIn = filteredData.filter(
+      (item) => item.checkIns.length > 0 && item.checkIns[0].status === "CHECKED_IN"
+    ).length
+    const checkedOut = filteredData.filter(
+      (item) => item.checkIns.length > 0 && item.checkIns[0].status === "CHECKED_OUT"
+    ).length
+    const presenceRate = totalParticipants > 0
+      ? (participantsWithCheckIn / totalParticipants) * 100
+      : 0
+
+    return {
+      totalParticipants,
+      checkedIn,
+      checkedOut,
+      presenceRate,
+    }
+  }, [filteredData, stats])
+
+  // Limpar filtro de participante quando a empresa muda
+  useEffect(() => {
+    setParticipantFilter("all")
+  }, [companyFilter])
 
   const fetchEvents = async () => {
     try {
@@ -96,10 +172,10 @@ export default function ReportsPage() {
   }
 
   const exportToExcel = () => {
-    if (reportData.length === 0) return
+    if (filteredData.length === 0) return
 
     // Prepara os dados para exportação
-    const excelData = reportData.flatMap((item) => {
+    const excelData = filteredData.flatMap((item) => {
       if (item.checkIns.length === 0) {
         return [
           {
@@ -149,7 +225,7 @@ export default function ReportsPage() {
   }
 
   const exportToPDF = async () => {
-    if (reportData.length === 0 || !stats) return
+    if (filteredData.length === 0 || !filteredStats) return
 
     const eventName = events.find((e) => e.id === selectedEvent)?.name || "Evento"
     
@@ -253,22 +329,22 @@ export default function ReportsPage() {
     const statsCards = [
       {
         label: "Total de Participantes",
-        value: stats.totalParticipants.toString(),
+        value: filteredStats.totalParticipants.toString(),
         color: [37, 99, 235], // Azul
       },
       {
         label: "Check-ins Realizados",
-        value: stats.checkedIn.toString(),
+        value: filteredStats.checkedIn.toString(),
         color: [34, 197, 94], // Verde
       },
       {
         label: "Check-outs Realizados",
-        value: stats.checkedOut.toString(),
+        value: filteredStats.checkedOut.toString(),
         color: [249, 115, 22], // Laranja
       },
       {
         label: "Taxa de Presença",
-        value: `${stats.presenceRate.toFixed(1)}%`,
+        value: `${filteredStats.presenceRate.toFixed(1)}%`,
         color: [168, 85, 247], // Roxo
       },
     ]
@@ -303,7 +379,7 @@ export default function ReportsPage() {
     yPosition = cardStartY + cardHeight + 10
 
     // ===== TABELA DE PARTICIPANTES =====
-    const tableData = reportData.flatMap((item) => {
+    const tableData = filteredData.flatMap((item) => {
       if (item.checkIns.length === 0) {
         return [[
           item.participant.name,
@@ -437,7 +513,7 @@ export default function ReportsPage() {
             </Select>
             <Button
               onClick={exportToPDF}
-              disabled={!selectedEvent || reportData.length === 0}
+              disabled={!selectedEvent || filteredData.length === 0}
               variant="outline"
               className="gap-2"
             >
@@ -446,7 +522,7 @@ export default function ReportsPage() {
             </Button>
             <Button
               onClick={exportToExcel}
-              disabled={!selectedEvent || reportData.length === 0}
+              disabled={!selectedEvent || filteredData.length === 0}
               className="gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -458,6 +534,103 @@ export default function ReportsPage() {
 
       {selectedEvent && stats && (
         <>
+          {/* Filtros */}
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-lg">Filtros</CardTitle>
+                </div>
+                {(companyFilter !== "all" || participantFilter !== "all") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setCompanyFilter("all")
+                      setParticipantFilter("all")
+                    }}
+                    className="gap-1 text-slate-500 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4" />
+                    Limpar filtros
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Filtro por Empresa */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Empresa</label>
+                  <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as empresas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as empresas</SelectItem>
+                      {uniqueCompanies.map((company) => (
+                        <SelectItem key={company} value={company}>
+                          {company}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro por Funcionário */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Funcionário</label>
+                  <Select value={participantFilter} onValueChange={setParticipantFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os funcionários" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os funcionários</SelectItem>
+                      {filteredParticipants.map((participant) => (
+                        <SelectItem key={participant.email} value={participant.email}>
+                          {participant.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Indicador de filtros ativos */}
+              {(companyFilter !== "all" || participantFilter !== "all") && (
+                <div className="mt-4 flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-slate-500">Filtros ativos:</span>
+                  {companyFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Empresa: {companyFilter}
+                      <button
+                        onClick={() => setCompanyFilter("all")}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {participantFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Funcionário: {filteredParticipants.find(p => p.email === participantFilter)?.name || participantFilter}
+                      <button
+                        onClick={() => setParticipantFilter("all")}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  <span className="text-sm text-slate-400">|
+                    {filteredData.length} de {reportData.length} participantes
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
@@ -466,7 +639,7 @@ export default function ReportsPage() {
                 <Users className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalParticipants}</div>
+                <div className="text-2xl font-bold">{filteredStats?.totalParticipants || 0}</div>
               </CardContent>
             </Card>
 
@@ -476,7 +649,7 @@ export default function ReportsPage() {
                 <UserCheck className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{stats.checkedIn}</div>
+                <div className="text-2xl font-bold text-green-600">{filteredStats?.checkedIn || 0}</div>
               </CardContent>
             </Card>
 
@@ -486,7 +659,7 @@ export default function ReportsPage() {
                 <Clock className="h-4 w-4 text-orange-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{stats.checkedOut}</div>
+                <div className="text-2xl font-bold text-orange-600">{filteredStats?.checkedOut || 0}</div>
               </CardContent>
             </Card>
 
@@ -497,7 +670,7 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-purple-600">
-                  {stats.presenceRate.toFixed(1)}%
+                  {filteredStats?.presenceRate.toFixed(1) || 0}%
                 </div>
               </CardContent>
             </Card>
@@ -514,9 +687,11 @@ export default function ReportsPage() {
             <CardContent>
               {loading ? (
                 <p className="text-center py-8 text-slate-500">Carregando...</p>
-              ) : reportData.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <p className="text-center py-8 text-slate-500">
-                  Nenhum participante cadastrado para este evento
+                  {reportData.length === 0 
+                    ? "Nenhum participante cadastrado para este evento"
+                    : "Nenhum participante encontrado com os filtros selecionados"}
                 </p>
               ) : (
                 <Table>
@@ -530,7 +705,7 @@ export default function ReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {reportData.map((item, index) => (
+                    {filteredData.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell>
                           <div>
