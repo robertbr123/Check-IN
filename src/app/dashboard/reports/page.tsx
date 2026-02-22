@@ -79,7 +79,7 @@ export default function ReportsPage() {
     const companies = reportData
       .map((item) => item.participant.company)
       .filter((company): company is string => !!company)
-    return [...new Set(companies)].sort()
+    return Array.from(new Set(companies)).sort()
   }, [reportData])
 
   // Lista de participantes (filtrada por empresa se selecionada)
