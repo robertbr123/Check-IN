@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search, MessageCircle, Calendar, X, Users, CheckSquare, Square } from "lucide-react"
+import { Plus, Pencil, Trash2, QrCode, Download, Mail, Search, MessageCircle, Calendar, X, Users, CheckSquare, Square, Briefcase, Building2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,17 @@ interface Event {
   name: string
 }
 
+interface Group {
+  name: string
+  count: number
+  participantIds: string[]
+}
+
+interface GroupsData {
+  positions: Group[]
+  companies: Group[]
+}
+
 export default function ParticipantsPage() {
   const [participants, setParticipants] = useState<UniqueParticipant[]>([])
   const [events, setEvents] = useState<Event[]>([])
@@ -67,6 +78,10 @@ export default function ParticipantsPage() {
   const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false)
   const [batchEventId, setBatchEventId] = useState<string>("")
   const [batchAdding, setBatchAdding] = useState(false)
+  // Estados para seleção por grupos
+  const [groups, setGroups] = useState<GroupsData>({ positions: [], companies: [] })
+  const [groupSelectionDialogOpen, setGroupSelectionDialogOpen] = useState(false)
+  const [groupSelectionType, setGroupSelectionType] = useState<"position" | "company">("position")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -80,6 +95,7 @@ export default function ParticipantsPage() {
   useEffect(() => {
     fetchParticipants()
     fetchEvents()
+    fetchGroups()
   }, [searchTerm])
 
   const fetchParticipants = async () => {
@@ -109,6 +125,18 @@ export default function ParticipantsPage() {
       }
     } catch (error) {
       console.error("Erro ao carregar eventos:", error)
+    }
+  }
+
+  const fetchGroups = async () => {
+    try {
+      const response = await fetch("/api/participants/groups")
+      if (response.ok) {
+        const data = await response.json()
+        setGroups(data)
+      }
+    } catch (error) {
+      console.error("Erro ao carregar grupos:", error)
     }
   }
 
@@ -320,6 +348,28 @@ export default function ParticipantsPage() {
     }
   }
 
+  // Funções de seleção por grupo
+  const openGroupSelectionDialog = (type: "position" | "company") => {
+    setGroupSelectionType(type)
+    setGroupSelectionDialogOpen(true)
+  }
+
+  const selectByGroup = (participantIds: string[]) => {
+    // Adiciona os IDs do grupo aos já selecionados
+    setSelectedParticipantIds(prev => {
+      const newSet = new Set(prev)
+      participantIds.forEach(id => newSet.add(id))
+      return newSet
+    })
+    setGroupSelectionDialogOpen(false)
+  }
+
+  const selectOnlyGroup = (participantIds: string[]) => {
+    // Seleciona apenas os IDs do grupo (substitui seleção atual)
+    setSelectedParticipantIds(new Set(participantIds))
+    setGroupSelectionDialogOpen(false)
+  }
+
   const handleBatchAddToEvent = async () => {
     if (!batchEventId || selectedParticipantIds.size === 0) return
 
@@ -457,7 +507,29 @@ export default function ParticipantsPage() {
               </CardDescription>
             </div>
             {participants.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openGroupSelectionDialog("position")}
+                  className="gap-2"
+                  disabled={groups.positions.length === 0}
+                  title="Selecionar por Cargo"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  Por Cargo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openGroupSelectionDialog("company")}
+                  className="gap-2"
+                  disabled={groups.companies.length === 0}
+                  title="Selecionar por Empresa"
+                >
+                  <Building2 className="w-4 h-4" />
+                  Por Empresa
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -477,13 +549,24 @@ export default function ParticipantsPage() {
                   )}
                 </Button>
                 {selectedParticipantIds.size > 0 && (
-                  <Button
-                    onClick={() => setBatchAddDialogOpen(true)}
-                    className="gap-2"
-                  >
-                    <Users className="w-4 h-4" />
-                    Adicionar ao Evento
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedParticipantIds(new Set())}
+                      className="gap-2 text-red-600 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                      Limpar
+                    </Button>
+                    <Button
+                      onClick={() => setBatchAddDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <Users className="w-4 h-4" />
+                      Adicionar ao Evento
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -921,6 +1004,69 @@ export default function ParticipantsPage() {
             >
               <Users className="w-4 h-4" />
               {batchAdding ? "Adicionando..." : "Adicionar ao Evento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Group Selection Dialog */}
+      <Dialog open={groupSelectionDialogOpen} onOpenChange={setGroupSelectionDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {groupSelectionType === "position" ? "Selecionar por Cargo" : "Selecionar por Empresa"}
+            </DialogTitle>
+            <DialogDescription>
+              Escolha um {groupSelectionType === "position" ? "cargo" : "empresa"} para selecionar todos os participantes
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
+            {(groupSelectionType === "position" ? groups.positions : groups.companies).map((group) => (
+              <div
+                key={group.name}
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  {groupSelectionType === "position" ? (
+                    <Briefcase className="w-5 h-5 text-slate-500" />
+                  ) : (
+                    <Building2 className="w-5 h-5 text-slate-500" />
+                  )}
+                  <div>
+                    <p className="font-medium text-slate-900">{group.name}</p>
+                    <p className="text-sm text-slate-500">{group.count} participante(s)</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => selectByGroup(group.participantIds)}
+                    title="Adicionar à seleção atual"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => selectOnlyGroup(group.participantIds)}
+                    title="Selecionar apenas este grupo"
+                  >
+                    <CheckSquare className="w-4 h-4 mr-1" />
+                    Selecionar
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {(groupSelectionType === "position" ? groups.positions : groups.companies).length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                <p>Nenhum {groupSelectionType === "position" ? "cargo" : "empresa"} encontrado</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGroupSelectionDialogOpen(false)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
