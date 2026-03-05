@@ -414,7 +414,11 @@ export default function ReportsPage() {
       yPosition += 8
     }
 
-    const tableData = filteredData.flatMap((item) => {
+    const sortedData = [...filteredData].sort((a, b) =>
+      a.participant.name.localeCompare(b.participant.name, "pt-BR")
+    )
+
+    const tableData = sortedData.flatMap((item) => {
       if (item.checkIns.length === 0) {
         return [[
           item.participant.name,
@@ -464,14 +468,14 @@ export default function ReportsPage() {
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { cellWidth: 40, fontStyle: "bold" }, // Nome
+        0: { cellWidth: 65, fontStyle: "bold", overflow: "linebreak" }, // Nome
         1: { cellWidth: 30 }, // CPF
-        2: { cellWidth: 25 }, // Telefone
-        3: { cellWidth: 30 }, // Empresa
-        4: { cellWidth: 28 }, // Cargo
-        5: { cellWidth: 28, halign: "center" }, // Check-in
-        6: { cellWidth: 28, halign: "center" }, // Check-out
-        7: { cellWidth: 22, halign: "center" }, // Status
+        2: { cellWidth: 22 }, // Telefone
+        3: { cellWidth: 28 }, // Empresa
+        4: { cellWidth: 25 }, // Cargo
+        5: { cellWidth: 27, halign: "center" }, // Check-in
+        6: { cellWidth: 27, halign: "center" }, // Check-out
+        7: { cellWidth: 20, halign: "center" }, // Status
       },
       didDrawPage: (data) => {
         // Rodapé em cada página
