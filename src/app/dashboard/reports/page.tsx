@@ -32,8 +32,10 @@ interface ReportData {
   participant: {
     name: string
     email: string
+    cpf: string
     phone: string | null
     company: string | null
+    position: string | null
   }
   checkIns: {
     checkInTime: string
@@ -59,6 +61,7 @@ export default function ReportsPage() {
   
   // Filtros
   const [companyFilter, setCompanyFilter] = useState<string>("all")
+  const [cargoFilter, setCargoFilter] = useState<string>("all")
   const [participantFilter, setParticipantFilter] = useState<string>("all")
 
   useEffect(() => {
@@ -70,6 +73,7 @@ export default function ReportsPage() {
       fetchReport()
       // Limpar filtros ao trocar de evento
       setCompanyFilter("all")
+      setCargoFilter("all")
       setParticipantFilter("all")
     }
   }, [selectedEvent])
@@ -82,7 +86,15 @@ export default function ReportsPage() {
     return Array.from(new Set(companies)).sort()
   }, [reportData])
 
-  // Lista de participantes (filtrada por empresa se selecionada)
+  // Lista de cargos únicos
+  const uniqueCargos = useMemo(() => {
+    const cargos = reportData
+      .map((item) => item.participant.position)
+      .filter((position): position is string => !!position)
+    return Array.from(new Set(cargos)).sort()
+  }, [reportData])
+
+  // Lista de participantes (filtrada por empresa e cargo se selecionados)
   const filteredParticipants = useMemo(() => {
     let participants = reportData
     if (companyFilter !== "all") {
@@ -90,11 +102,16 @@ export default function ReportsPage() {
         (item) => item.participant.company === companyFilter
       )
     }
+    if (cargoFilter !== "all") {
+      participants = participants.filter(
+        (item) => item.participant.position === cargoFilter
+      )
+    }
     return participants.map((item) => ({
       name: item.participant.name,
       email: item.participant.email,
     })).sort((a, b) => a.name.localeCompare(b.name))
-  }, [reportData, companyFilter])
+  }, [reportData, companyFilter, cargoFilter])
 
   // Dados filtrados
   const filteredData = useMemo(() => {
@@ -103,13 +120,17 @@ export default function ReportsPage() {
     if (companyFilter !== "all") {
       data = data.filter((item) => item.participant.company === companyFilter)
     }
+
+    if (cargoFilter !== "all") {
+      data = data.filter((item) => item.participant.position === cargoFilter)
+    }
     
     if (participantFilter !== "all") {
       data = data.filter((item) => item.participant.email === participantFilter)
     }
     
     return data
-  }, [reportData, companyFilter, participantFilter])
+  }, [reportData, companyFilter, cargoFilter, participantFilter])
 
   // Estatísticas filtradas
   const filteredStats = useMemo(() => {
@@ -137,10 +158,10 @@ export default function ReportsPage() {
     }
   }, [filteredData, stats])
 
-  // Limpar filtro de participante quando a empresa muda
+  // Limpar filtro de participante quando a empresa ou cargo muda
   useEffect(() => {
     setParticipantFilter("all")
-  }, [companyFilter])
+  }, [companyFilter, cargoFilter])
 
   const fetchEvents = async () => {
     try {
@@ -180,9 +201,11 @@ export default function ReportsPage() {
         return [
           {
             Nome: item.participant.name,
+            CPF: item.participant.cpf || "-",
             Email: item.participant.email,
             Telefone: item.participant.phone || "-",
             Empresa: item.participant.company || "-",
+            Cargo: item.participant.position || "-",
             "Check-in": "-",
             "Check-out": "-",
             Status: "Sem check-in",
@@ -192,9 +215,11 @@ export default function ReportsPage() {
 
       return item.checkIns.map((checkIn) => ({
         Nome: item.participant.name,
+        CPF: item.participant.cpf || "-",
         Email: item.participant.email,
         Telefone: item.participant.phone || "-",
         Empresa: item.participant.company || "-",
+        Cargo: item.participant.position || "-",
         "Check-in": formatDateTime(checkIn.checkInTime),
         "Check-out": checkIn.checkOutTime
           ? formatDateTime(checkIn.checkOutTime)
@@ -211,9 +236,11 @@ export default function ReportsPage() {
     // Define largura das colunas
     ws["!cols"] = [
       { wch: 25 }, // Nome
+      { wch: 18 }, // CPF
       { wch: 30 }, // Email
       { wch: 15 }, // Telefone
       { wch: 20 }, // Empresa
+      { wch: 20 }, // Cargo
       { wch: 20 }, // Check-in
       { wch: 20 }, // Check-out
       { wch: 15 }, // Status
@@ -379,13 +406,22 @@ export default function ReportsPage() {
     yPosition = cardStartY + cardHeight + 10
 
     // ===== TABELA DE PARTICIPANTES =====
+    // Título do filtro de cargo ativo
+    if (cargoFilter !== "all") {
+      doc.setFontSize(10)
+      doc.setTextColor(100, 100, 100)
+      doc.text(`Cargo: ${cargoFilter}`, 15, yPosition)
+      yPosition += 8
+    }
+
     const tableData = filteredData.flatMap((item) => {
       if (item.checkIns.length === 0) {
         return [[
           item.participant.name,
-          item.participant.email,
+          item.participant.cpf || "-",
           item.participant.phone || "-",
           item.participant.company || "-",
+          item.participant.position || "-",
           "-",
           "-",
           "Sem check-in",
@@ -394,9 +430,10 @@ export default function ReportsPage() {
 
       return item.checkIns.map((checkIn) => [
         item.participant.name,
-        item.participant.email,
+        item.participant.cpf || "-",
         item.participant.phone || "-",
         item.participant.company || "-",
+        item.participant.position || "-",
         formatDateTime(checkIn.checkInTime),
         checkIn.checkOutTime
           ? formatDateTime(checkIn.checkOutTime)
@@ -406,20 +443,20 @@ export default function ReportsPage() {
     })
 
     autoTable(doc, {
-      head: [["Nome", "Email", "Telefone", "Empresa", "Check-in", "Check-out", "Status"]],
+      head: [["Nome", "CPF", "Telefone", "Empresa", "Cargo", "Check-in", "Check-out", "Status"]],
       body: tableData,
       startY: yPosition,
       theme: "striped",
       styles: {
-        fontSize: 9,
-        cellPadding: 4,
+        fontSize: 8,
+        cellPadding: 3,
         lineColor: [220, 220, 220],
         lineWidth: 0.1,
       },
       headStyles: {
         fillColor: [37, 99, 235],
         textColor: 255,
-        fontSize: 10,
+        fontSize: 9,
         fontStyle: "bold",
         halign: "center",
       },
@@ -427,13 +464,14 @@ export default function ReportsPage() {
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { cellWidth: 45, fontStyle: "bold" }, // Nome
-        1: { cellWidth: 55 }, // Email
-        2: { cellWidth: 28 }, // Telefone
-        3: { cellWidth: 35 }, // Empresa
-        4: { cellWidth: 30, halign: "center" }, // Check-in
-        5: { cellWidth: 30, halign: "center" }, // Check-out
-        6: { cellWidth: 25, halign: "center" }, // Status
+        0: { cellWidth: 40, fontStyle: "bold" }, // Nome
+        1: { cellWidth: 30 }, // CPF
+        2: { cellWidth: 25 }, // Telefone
+        3: { cellWidth: 30 }, // Empresa
+        4: { cellWidth: 28 }, // Cargo
+        5: { cellWidth: 28, halign: "center" }, // Check-in
+        6: { cellWidth: 28, halign: "center" }, // Check-out
+        7: { cellWidth: 22, halign: "center" }, // Status
       },
       didDrawPage: (data) => {
         // Rodapé em cada página
@@ -542,12 +580,13 @@ export default function ReportsPage() {
                   <Filter className="h-5 w-5 text-blue-600" />
                   <CardTitle className="text-lg">Filtros</CardTitle>
                 </div>
-                {(companyFilter !== "all" || participantFilter !== "all") && (
+                  {(companyFilter !== "all" || cargoFilter !== "all" || participantFilter !== "all") && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
                       setCompanyFilter("all")
+                      setCargoFilter("all")
                       setParticipantFilter("all")
                     }}
                     className="gap-1 text-slate-500 hover:text-slate-700"
@@ -559,7 +598,7 @@ export default function ReportsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Filtro por Empresa */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Empresa</label>
@@ -572,6 +611,24 @@ export default function ReportsPage() {
                       {uniqueCompanies.map((company) => (
                         <SelectItem key={company} value={company}>
                           {company}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro por Cargo */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Cargo</label>
+                  <Select value={cargoFilter} onValueChange={setCargoFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os cargos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os cargos</SelectItem>
+                      {uniqueCargos.map((cargo) => (
+                        <SelectItem key={cargo} value={cargo}>
+                          {cargo}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -598,7 +655,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Indicador de filtros ativos */}
-              {(companyFilter !== "all" || participantFilter !== "all") && (
+              {(companyFilter !== "all" || cargoFilter !== "all" || participantFilter !== "all") && (
                 <div className="mt-4 flex items-center gap-2 flex-wrap">
                   <span className="text-sm text-slate-500">Filtros ativos:</span>
                   {companyFilter !== "all" && (
@@ -606,6 +663,17 @@ export default function ReportsPage() {
                       Empresa: {companyFilter}
                       <button
                         onClick={() => setCompanyFilter("all")}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {cargoFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Cargo: {cargoFilter}
+                      <button
+                        onClick={() => setCargoFilter("all")}
                         className="ml-1 hover:text-red-500"
                       >
                         <X className="h-3 w-3" />

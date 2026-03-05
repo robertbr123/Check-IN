@@ -59,8 +59,10 @@ export async function GET(
       participant: {
         name: ep.participant.name,
         email: ep.participant.email,
+        cpf: ep.participant.document,
         phone: ep.participant.phone,
         company: ep.participant.company,
+        position: ep.participant.position,
       },
       checkIns: ep.checkIns.map((checkIn) => ({
         checkInTime: checkIn.checkInTime,
