@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://admin:admin123@localhost:5432/checkin_db?schema=public\" npx prisma db push)"
+    ]
+  }
+}

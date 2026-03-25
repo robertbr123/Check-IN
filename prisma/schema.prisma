@@ -28,11 +28,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String?
-  
-  creator   User?    @relation("UserCreatedBy", fields: [createdBy], references: [id])
-  createdUsers User[] @relation("UserCreatedBy")
-  events    Event[]  @relation("EventCreatedBy")
-  
+
+  creator              User?                  @relation("UserCreatedBy", fields: [createdBy], references: [id])
+  createdUsers         User[]                 @relation("UserCreatedBy")
+  events               Event[]                @relation("EventCreatedBy")
+  certificateTemplates CertificateTemplate[]  @relation("CertificateTemplateCreatedBy")
+
   @@map("users")
 }
 
@@ -50,10 +51,11 @@ model Event {
   updatedAt   DateTime  @updatedAt
   createdBy   String
   
-  creator           User                @relation("EventCreatedBy", fields: [createdBy], references: [id])
-  eventParticipants EventParticipant[]
-  checkIns          CheckIn[]
-  
+  creator              User                 @relation("EventCreatedBy", fields: [createdBy], references: [id])
+  eventParticipants    EventParticipant[]
+  checkIns             CheckIn[]
+  certificateTemplate  CertificateTemplate?
+
   @@map("events")
 }
 
@@ -107,6 +109,29 @@ model CheckIn {
   event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   
   @@map("check_ins")
+}
+
+model CertificateTemplate {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  imageData   String   @db.Text
+  imageMime   String   @default("image/jpeg")
+  nameX       Float    @default(50)
+  nameY       Float    @default(65)
+  fontSize    Int      @default(60)
+  fontColor   String   @default("#000000")
+  fontFamily  String   @default("helvetica")
+  bold        Boolean  @default(false)
+  italic      Boolean  @default(false)
+  textAlign   String   @default("center")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String
+
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  creator User  @relation("CertificateTemplateCreatedBy", fields: [createdBy], references: [id])
+
+  @@map("certificate_templates")
 }
 
 model Settings {

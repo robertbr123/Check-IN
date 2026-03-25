@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Settings,
+  Award,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -127,6 +128,13 @@ export function Navbar() {
                     Relatórios
                   </Button>
                 </Link>
+
+                <Link href="/dashboard/certificates">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Award className="w-4 h-4" />
+                    Certificados
+                  </Button>
+                </Link>
               </>
             )}
 
@@ -229,6 +237,16 @@ export function Navbar() {
                     <Button variant="ghost" className="w-full justify-start gap-2">
                       <BarChart3 className="w-4 h-4" />
                       Relatórios
+                    </Button>
+                  </Link>
+
+                  <Link
+                    href="/dashboard/certificates"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Award className="w-4 h-4" />
+                      Certificados
                     </Button>
                   </Link>
                 </>
