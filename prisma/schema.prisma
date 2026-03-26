@@ -117,13 +117,17 @@ model CertificateTemplate {
   imageData   String   @db.Text
   imageMime   String   @default("image/jpeg")
   nameX       Float    @default(50)
-  nameY       Float    @default(65)
+  nameY       Float    @default(60)
   fontSize    Int      @default(60)
   fontColor   String   @default("#000000")
   fontFamily  String   @default("helvetica")
   bold        Boolean  @default(false)
   italic      Boolean  @default(false)
   textAlign   String   @default("center")
+  showCpf     Boolean  @default(false)
+  cpfX        Float    @default(50)
+  cpfY        Float    @default(68)
+  cpfFontSize Int      @default(36)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   String

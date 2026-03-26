@@ -24,7 +24,7 @@ export async function GET(
       },
       include: {
         participant: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, document: true },
         },
       },
       orderBy: {
@@ -36,6 +36,7 @@ export async function GET(
       id: ep.participant.id,
       name: ep.participant.name,
       email: ep.participant.email,
+      document: ep.participant.document,
     }))
 
     return NextResponse.json(attendees)

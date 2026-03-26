@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (session.user.role === "OPERADOR") return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
 
     const body = await request.json()
-    const { eventId, imageData, imageMime, nameX, nameY, fontSize, fontColor, fontFamily, bold, italic, textAlign } = body
+    const { eventId, imageData, imageMime, nameX, nameY, fontSize, fontColor, fontFamily, bold, italic, textAlign, showCpf, cpfX, cpfY, cpfFontSize } = body
 
     if (!eventId || !imageData) {
       return NextResponse.json({ error: "eventId e imageData são obrigatórios" }, { status: 400 })
@@ -49,13 +49,17 @@ export async function POST(request: Request) {
         imageData,
         imageMime: imageMime || "image/jpeg",
         nameX: nameX ?? 50,
-        nameY: nameY ?? 65,
+        nameY: nameY ?? 60,
         fontSize: fontSize ?? 60,
         fontColor: fontColor || "#000000",
         fontFamily: fontFamily || "helvetica",
         bold: bold ?? false,
         italic: italic ?? false,
         textAlign: textAlign || "center",
+        showCpf: showCpf ?? false,
+        cpfX: cpfX ?? 50,
+        cpfY: cpfY ?? 68,
+        cpfFontSize: cpfFontSize ?? 36,
         createdBy: session.user.id,
       },
     })
@@ -79,7 +83,7 @@ export async function PUT(request: Request) {
     if (!id) return NextResponse.json({ error: "id obrigatório" }, { status: 400 })
 
     const body = await request.json()
-    const { imageData, imageMime, nameX, nameY, fontSize, fontColor, fontFamily, bold, italic, textAlign } = body
+    const { imageData, imageMime, nameX, nameY, fontSize, fontColor, fontFamily, bold, italic, textAlign, showCpf, cpfX, cpfY, cpfFontSize } = body
 
     const template = await prisma.certificateTemplate.update({
       where: { id },
@@ -94,6 +98,10 @@ export async function PUT(request: Request) {
         bold: bold ?? undefined,
         italic: italic ?? undefined,
         textAlign: textAlign || undefined,
+        showCpf: showCpf ?? undefined,
+        cpfX: cpfX ?? undefined,
+        cpfY: cpfY ?? undefined,
+        cpfFontSize: cpfFontSize ?? undefined,
       },
     })
 
